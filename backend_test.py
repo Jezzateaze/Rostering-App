@@ -1238,7 +1238,7 @@ class ShiftRosterAPITester:
 
 def main():
     print("🚀 Starting Shift Roster & Pay Calculator API Tests")
-    print("🎯 FOCUS: Testing Export Functionality & Queensland Public Holiday Detection")
+    print("🎯 FOCUS: Testing Shift Type Classification Fix for SCHADS Award Compliance")
     print("=" * 80)
     
     tester = ShiftRosterAPITester()
@@ -1251,9 +1251,9 @@ def main():
         tester.test_get_settings,
     ]
     
-    # Run EXPORT & HOLIDAY functionality tests (PRIORITY)
-    export_holiday_tests = [
-        tester.test_comprehensive_export_and_holiday_system,
+    # Run SHIFT TYPE CLASSIFICATION tests (PRIORITY)
+    classification_tests = [
+        tester.test_shift_type_classification_fix,
     ]
     
     # Run other tests
@@ -1272,15 +1272,15 @@ def main():
         except Exception as e:
             print(f"❌ Test failed with exception: {str(e)}")
     
-    print("\n🎯 Running EXPORT & HOLIDAY FUNCTIONALITY Tests (PRIORITY)...")
-    export_holiday_results = []
-    for test in export_holiday_tests:
+    print("\n🎯 Running SHIFT TYPE CLASSIFICATION Tests (PRIORITY)...")
+    classification_results = []
+    for test in classification_tests:
         try:
             result = test()
-            export_holiday_results.append(result)
+            classification_results.append(result)
         except Exception as e:
-            print(f"❌ Export/Holiday test failed with exception: {str(e)}")
-            export_holiday_results.append(False)
+            print(f"❌ Classification test failed with exception: {str(e)}")
+            classification_results.append(False)
     
     print("\n🔧 Running Other Tests...")
     for test in other_tests:
@@ -1293,23 +1293,23 @@ def main():
     print("\n" + "=" * 80)
     print(f"📊 Final Results: {tester.tests_passed}/{tester.tests_run} tests passed")
     
-    # Special focus on export & holiday functionality results
-    export_holiday_passed = sum(export_holiday_results)
-    export_holiday_total = len(export_holiday_results)
+    # Special focus on shift type classification results
+    classification_passed = sum(classification_results)
+    classification_total = len(classification_results)
     
-    print(f"🎯 EXPORT & HOLIDAY FUNCTIONALITY Results: {export_holiday_passed}/{export_holiday_total} tests passed")
+    print(f"🎯 SHIFT TYPE CLASSIFICATION Results: {classification_passed}/{classification_total} tests passed")
     
-    if export_holiday_passed == export_holiday_total:
-        print("✅ ALL EXPORT & HOLIDAY FUNCTIONALITY TESTS PASSED!")
-        print("   - CSV export endpoints working")
-        print("   - Excel export endpoint working")
-        print("   - PDF export endpoint working")
-        print("   - Queensland public holiday detection working")
-        print("   - Holiday integration with roster working")
-        print("   - Export with holiday data working")
+    if classification_passed == classification_total:
+        print("✅ SHIFT TYPE CLASSIFICATION FIX VERIFIED!")
+        print("   - 15:30-23:30 shifts correctly classified as EVENING")
+        print("   - Shifts ending at or before 20:00 are DAY shifts")
+        print("   - Shifts extending past 20:00 are EVENING shifts")
+        print("   - SCHADS Award compliance verified")
     else:
-        print("❌ EXPORT & HOLIDAY FUNCTIONALITY ISSUES DETECTED!")
-        print("   Check the detailed output above for specific failures")
+        print("❌ SHIFT TYPE CLASSIFICATION ISSUES DETECTED!")
+        print("   - 15:30-23:30 shifts may not be classified correctly")
+        print("   - Check SCHADS Award compliance logic")
+        print("   - Verify 20:00 cutoff time implementation")
     
     if tester.tests_passed == tester.tests_run:
         print("🎉 All tests passed!")
