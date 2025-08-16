@@ -41,6 +41,8 @@ function App() {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [showBreakWarning, setShowBreakWarning] = useState(false);
+  const [breakWarningData, setBreakWarningData] = useState(null);
   const [newStaffName, setNewStaffName] = useState('');
   const [activeTab, setActiveTab] = useState('roster');
 
