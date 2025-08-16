@@ -227,14 +227,15 @@ function App() {
           {dayEntries.map(entry => (
             <div
               key={entry.id}
-              className="text-xs p-1 rounded cursor-pointer hover:bg-slate-100 transition-colors"
+              className="text-xs p-1 rounded cursor-pointer hover:bg-slate-100 transition-colors group"
               onClick={() => {
                 setSelectedShift(entry);
                 setShowShiftDialog(true);
               }}
             >
-              <div className="font-medium">
-                {entry.start_time}-{entry.end_time}
+              <div className="font-medium flex items-center justify-between">
+                <span>{entry.start_time}-{entry.end_time}</span>
+                <Edit className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className="text-slate-600">
                 {entry.staff_name || 'Unassigned'}
