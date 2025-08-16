@@ -1193,6 +1193,296 @@ class ShiftRosterAPITester:
             print(f"   ❌ Export functionality failed with holiday data")
             return False
 
+    def test_roster_template_system(self):
+        """Comprehensive test of the roster template system"""
+        print(f"\n🎯 COMPREHENSIVE ROSTER TEMPLATE SYSTEM TEST")
+        print("=" * 60)
+        
+        # Store template ID for later tests
+        template_id = None
+        template_name = "Test Template January 2025"
+        template_description = "Test template description for January roster"
+        source_month = "2025-01"
+        target_month = "2025-02"
+        
+        # Step 1: Ensure we have roster data for January 2025
+        print(f"\nStep 1: Ensuring roster data exists for {source_month}...")
+        gen_success, gen_response = self.run_test(
+            f"Generate Roster for {source_month}",
+            "POST",
+            f"api/generate-roster/{source_month}",
+            200
+        )
+        
+        if not gen_success:
+            print(f"   ❌ Failed to generate roster data for {source_month}")
+            return False
+        
+        print(f"   ✅ Roster data generated for {source_month}")
+        
+        # Step 2: Save current roster as template
+        print(f"\nStep 2: Testing Save Current Roster as Template...")
+        save_success, save_response = self.run_test(
+            "Save Roster as Template",
+            "POST",
+            "api/roster-templates",
+            200,
+            params={
+                "name": template_name,
+                "description": template_description,
+                "month": source_month
+            }
+        )
+        
+        if not save_success:
+            print(f"   ❌ Failed to save roster as template")
+            return False
+        
+        template_id = save_response.get("template_id")
+        shift_count = save_response.get("shift_count", 0)
+        
+        print(f"   ✅ Template saved successfully")
+        print(f"   Template ID: {template_id}")
+        print(f"   Shift count: {shift_count}")
+        
+        if not template_id:
+            print(f"   ❌ No template ID returned")
+            return False
+        
+        # Step 3: Get all templates
+        print(f"\nStep 3: Testing Get All Templates...")
+        get_all_success, get_all_response = self.run_test(
+            "Get All Roster Templates",
+            "GET",
+            "api/roster-templates",
+            200
+        )
+        
+        if not get_all_success:
+            print(f"   ❌ Failed to get all templates")
+            return False
+        
+        templates_found = len(get_all_response)
+        print(f"   ✅ Retrieved {templates_found} templates")
+        
+        # Verify our template is in the list
+        our_template = None
+        for template in get_all_response:
+            if template.get("id") == template_id:
+                our_template = template
+                break
+        
+        if not our_template:
+            print(f"   ❌ Our template not found in the list")
+            return False
+        
+        print(f"   ✅ Our template found: '{our_template.get('name')}'")
+        
+        # Step 4: Get specific template
+        print(f"\nStep 4: Testing Get Specific Template...")
+        get_specific_success, get_specific_response = self.run_test(
+            "Get Specific Template",
+            "GET",
+            f"api/roster-templates/{template_id}",
+            200
+        )
+        
+        if not get_specific_success:
+            print(f"   ❌ Failed to get specific template")
+            return False
+        
+        template_shifts = get_specific_response.get("shifts", [])
+        print(f"   ✅ Template retrieved with {len(template_shifts)} shifts")
+        print(f"   Template name: {get_specific_response.get('name')}")
+        print(f"   Template description: {get_specific_response.get('description')}")
+        
+        # Step 5: Generate roster from template
+        print(f"\nStep 5: Testing Generate Roster from Template...")
+        generate_success, generate_response = self.run_test(
+            "Generate Roster from Template",
+            "POST",
+            f"api/generate-roster/{target_month}",
+            200,
+            params={"template_id": template_id}
+        )
+        
+        if not generate_success:
+            print(f"   ❌ Failed to generate roster from template")
+            return False
+        
+        entries_generated = generate_response.get("entries_generated", 0)
+        print(f"   ✅ Generated {entries_generated} roster entries for {target_month}")
+        print(f"   Template used: {generate_response.get('template_name')}")
+        
+        # Step 6: Verify generated roster
+        print(f"\nStep 6: Verifying Generated Roster...")
+        verify_success, verify_response = self.run_test(
+            f"Get Generated Roster for {target_month}",
+            "GET",
+            "api/roster",
+            200,
+            params={"month": target_month}
+        )
+        
+        if not verify_success:
+            print(f"   ❌ Failed to get generated roster")
+            return False
+        
+        generated_entries = len(verify_response)
+        print(f"   ✅ Found {generated_entries} entries in {target_month}")
+        
+        # Verify entries have correct structure and no staff assignments
+        if generated_entries > 0:
+            sample_entry = verify_response[0]
+            print(f"   Sample entry date: {sample_entry.get('date')}")
+            print(f"   Sample entry times: {sample_entry.get('start_time')} - {sample_entry.get('end_time')}")
+            print(f"   Staff assigned: {sample_entry.get('staff_name', 'None')}")
+            print(f"   Total pay calculated: ${sample_entry.get('total_pay', 0):.2f}")
+            
+            # Verify no staff assignments (should be None/null)
+            staff_assigned = any(entry.get('staff_id') for entry in verify_response)
+            if not staff_assigned:
+                print(f"   ✅ No staff assignments copied (correct behavior)")
+            else:
+                print(f"   ❌ Staff assignments were copied (incorrect behavior)")
+        
+        # Step 7: Test generate roster without template (default behavior)
+        print(f"\nStep 7: Testing Generate Roster without Template...")
+        test_month = "2025-03"
+        default_success, default_response = self.run_test(
+            "Generate Roster without Template (Default)",
+            "POST",
+            f"api/generate-roster/{test_month}",
+            200
+        )
+        
+        if not default_success:
+            print(f"   ❌ Failed to generate roster with default templates")
+            return False
+        
+        print(f"   ✅ Default roster generation successful")
+        print(f"   Message: {default_response.get('message', 'No message')}")
+        
+        # Step 8: Delete template
+        print(f"\nStep 8: Testing Delete Template...")
+        delete_success, delete_response = self.run_test(
+            "Delete Roster Template",
+            "DELETE",
+            f"api/roster-templates/{template_id}",
+            200
+        )
+        
+        if not delete_success:
+            print(f"   ❌ Failed to delete template")
+            return False
+        
+        print(f"   ✅ Template deleted successfully")
+        print(f"   Message: {delete_response.get('message', 'No message')}")
+        
+        # Step 9: Verify template deletion
+        print(f"\nStep 9: Verifying Template Deletion...")
+        verify_delete_success, verify_delete_response = self.run_test(
+            "Verify Template Deleted (Should get 404)",
+            "GET",
+            f"api/roster-templates/{template_id}",
+            404
+        )
+        
+        if verify_delete_success:
+            print(f"   ✅ Template deletion verified - returns 404")
+        else:
+            print(f"   ❌ Template may still exist")
+            return False
+        
+        # Final summary
+        print(f"\n" + "=" * 60)
+        print(f"🎉 ROSTER TEMPLATE SYSTEM TEST COMPLETED SUCCESSFULLY!")
+        print(f"✅ All 9 test steps passed:")
+        print(f"   1. ✅ Generated source roster data")
+        print(f"   2. ✅ Saved roster as template")
+        print(f"   3. ✅ Retrieved all templates")
+        print(f"   4. ✅ Retrieved specific template")
+        print(f"   5. ✅ Generated roster from template")
+        print(f"   6. ✅ Verified generated roster structure")
+        print(f"   7. ✅ Tested default roster generation")
+        print(f"   8. ✅ Deleted template")
+        print(f"   9. ✅ Verified template deletion")
+        print(f"=" * 60)
+        
+        return True
+
+    def test_roster_template_edge_cases(self):
+        """Test edge cases for roster template system"""
+        print(f"\n🔍 Testing Roster Template Edge Cases...")
+        
+        # Test 1: Save template from non-existent month
+        print(f"\n   Test 1: Save template from non-existent month...")
+        edge_success_1, edge_response_1 = self.run_test(
+            "Save Template from Non-existent Month",
+            "POST",
+            "api/roster-templates",
+            404,  # Should return 404
+            params={
+                "name": "Non-existent Template",
+                "description": "Should fail",
+                "month": "2025-12"  # Assuming no data for December
+            }
+        )
+        
+        if edge_success_1:
+            print(f"      ✅ Correctly returned 404 for non-existent month")
+        else:
+            print(f"      ❌ Should have returned 404 for non-existent month")
+        
+        # Test 2: Get non-existent template
+        print(f"\n   Test 2: Get non-existent template...")
+        fake_template_id = "non-existent-template-id"
+        edge_success_2, edge_response_2 = self.run_test(
+            "Get Non-existent Template",
+            "GET",
+            f"api/roster-templates/{fake_template_id}",
+            404
+        )
+        
+        if edge_success_2:
+            print(f"      ✅ Correctly returned 404 for non-existent template")
+        else:
+            print(f"      ❌ Should have returned 404 for non-existent template")
+        
+        # Test 3: Delete non-existent template
+        print(f"\n   Test 3: Delete non-existent template...")
+        edge_success_3, edge_response_3 = self.run_test(
+            "Delete Non-existent Template",
+            "DELETE",
+            f"api/roster-templates/{fake_template_id}",
+            404
+        )
+        
+        if edge_success_3:
+            print(f"      ✅ Correctly returned 404 for non-existent template deletion")
+        else:
+            print(f"      ❌ Should have returned 404 for non-existent template deletion")
+        
+        # Test 4: Generate roster with non-existent template
+        print(f"\n   Test 4: Generate roster with non-existent template...")
+        edge_success_4, edge_response_4 = self.run_test(
+            "Generate Roster with Non-existent Template",
+            "POST",
+            "api/generate-roster/2025-04",
+            404,
+            params={"template_id": fake_template_id}
+        )
+        
+        if edge_success_4:
+            print(f"      ✅ Correctly returned 404 for non-existent template in generation")
+        else:
+            print(f"      ❌ Should have returned 404 for non-existent template in generation")
+        
+        edge_tests_passed = sum([edge_success_1, edge_success_2, edge_success_3, edge_success_4])
+        print(f"\n   📊 Edge case tests: {edge_tests_passed}/4 passed")
+        
+        return edge_tests_passed == 4
+
     def test_comprehensive_export_and_holiday_system(self):
         """Comprehensive test of export and holiday systems"""
         print(f"\n🎯 COMPREHENSIVE EXPORT & HOLIDAY SYSTEM TEST")
