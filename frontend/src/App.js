@@ -1792,7 +1792,7 @@ function App() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-slate-500 mt-1">
-                  Default uses your configured shift templates. Saved templates use exact shift patterns.
+                  Default uses your configured shift templates. Saved templates use day-of-week patterns (Monday patterns → Mondays, etc.).
                 </p>
               </div>
 
