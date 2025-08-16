@@ -854,7 +854,7 @@ def save_roster_template(
 
 @app.post("/api/generate-roster-from-template/{template_id}/{month}")
 def generate_roster_from_template(template_id: str, month: str):
-    """Generate roster for a month using a saved template"""
+    """Generate roster for a month using a saved template (day-of-week based)"""
     try:
         # Get the template
         template = db.roster_templates.find_one({"id": template_id})
@@ -878,57 +878,75 @@ def generate_roster_from_template(template_id: str, month: str):
         settings_doc = db.settings.find_one()
         settings = Settings(**settings_doc) if settings_doc else Settings()
         
-        # Generate roster entries from template
+        # Generate roster entries from template using day-of-week logic
         generated_entries = []
         
         # Get the number of days in the target month
         import calendar
         days_in_month = calendar.monthrange(target_year, target_month)[1]
         
+        # Group template shifts by day of week for easier processing
+        shifts_by_day = {}
         for shift in template["shifts"]:
-            day_of_month = shift["day_of_month"]
+            day_of_week = shift["day_of_week"]
+            if day_of_week not in shifts_by_day:
+                shifts_by_day[day_of_week] = []
+            shifts_by_day[day_of_week].append(shift)
+        
+        # Iterate through each day of the target month
+        for day in range(1, days_in_month + 1):
+            target_date_obj = datetime(target_year, target_month, day)
+            target_date = target_date_obj.strftime("%Y-%m-%d")
+            day_of_week = target_date_obj.weekday()  # 0=Monday, 6=Sunday
             
-            # Skip if day doesn't exist in target month (e.g., Feb 31st)
-            if day_of_month > days_in_month:
-                continue
-            
-            # Create the date for the target month
-            target_date = f"{year}-{month_num.zfill(2)}-{str(day_of_month).zfill(2)}"
-            
-            # Create roster entry
-            entry_id = str(uuid.uuid4())
-            roster_entry = RosterEntry(
-                id=entry_id,
-                date=target_date,
-                shift_template_id=f"template-{template_id}",
-                staff_id=None,  # No staff assigned
-                staff_name=None,
-                start_time=shift["start_time"],
-                end_time=shift["end_time"],
-                is_sleepover=shift.get("is_sleepover", False),
-                is_public_holiday=False,  # Will be auto-detected
-                manual_shift_type=shift.get("manual_shift_type"),
-                manual_hourly_rate=shift.get("manual_hourly_rate"),
-                manual_sleepover=shift.get("manual_sleepover"),
-                wake_hours=shift.get("wake_hours"),
-                hours_worked=0.0,
-                base_pay=0.0,
-                sleepover_allowance=0.0,
-                total_pay=0.0
-            )
-            
-            # Calculate pay and hours
-            roster_entry = calculate_pay(roster_entry, settings)
-            
-            # Save to database
-            db.roster.insert_one(roster_entry.dict())
-            generated_entries.append(roster_entry.dict())
+            # Check if we have shift patterns for this day of the week
+            if day_of_week in shifts_by_day:
+                for shift in shifts_by_day[day_of_week]:
+                    # Create roster entry
+                    entry_id = str(uuid.uuid4())
+                    roster_entry = RosterEntry(
+                        id=entry_id,
+                        date=target_date,
+                        shift_template_id=f"template-{template_id}",
+                        staff_id=None,  # No staff assigned
+                        staff_name=None,
+                        start_time=shift["start_time"],
+                        end_time=shift["end_time"],
+                        is_sleepover=shift.get("is_sleepover", False),
+                        is_public_holiday=False,  # Will be auto-detected
+                        manual_shift_type=shift.get("manual_shift_type"),
+                        manual_hourly_rate=shift.get("manual_hourly_rate"),
+                        manual_sleepover=shift.get("manual_sleepover"),
+                        wake_hours=shift.get("wake_hours"),
+                        hours_worked=0.0,
+                        base_pay=0.0,
+                        sleepover_allowance=0.0,
+                        total_pay=0.0
+                    )
+                    
+                    # Calculate pay and hours
+                    roster_entry = calculate_pay(roster_entry, settings)
+                    
+                    # Save to database
+                    db.roster.insert_one(roster_entry.dict())
+                    generated_entries.append(roster_entry.dict())
+        
+        # Create summary
+        day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        generated_summary = {}
+        for day_of_week, shifts in shifts_by_day.items():
+            # Count how many days of this type exist in the target month
+            days_count = sum(1 for day in range(1, days_in_month + 1) 
+                           if datetime(target_year, target_month, day).weekday() == day_of_week)
+            generated_summary[day_names[day_of_week]] = len(shifts) * days_count
         
         return {
-            "message": f"Roster generated successfully for {month} using template '{template['name']}'",
+            "message": f"Roster generated successfully for {month} using day-of-week template '{template['name']}'",
             "template_name": template["name"],
             "month": month,
             "entries_generated": len(generated_entries),
+            "pattern_applied": "day_of_week",
+            "generation_summary": generated_summary,
             "entries": generated_entries
         }
         
