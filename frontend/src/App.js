@@ -1805,7 +1805,17 @@ function App() {
                       <div className="text-xs text-slate-600">
                         <p><strong>{template.name}</strong></p>
                         <p>{template.description}</p>
-                        <p>{template.shift_count} shifts configured</p>
+                        <p>{template.shift_count} shifts configured (day-of-week pattern)</p>
+                        {template.pattern_summary && (
+                          <div className="mt-2">
+                            <p className="font-medium">Weekly Pattern:</p>
+                            {Object.entries(template.pattern_summary).map(([day, count]) => (
+                              <span key={day} className="inline-block mr-2 text-xs">
+                                {day}: {count}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ) : null;
                   })()}
