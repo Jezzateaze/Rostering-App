@@ -19,6 +19,14 @@ DB_NAME = os.environ.get("DB_NAME", "shift_roster_db")
 client = MongoClient(MONGO_URL)
 db = client[DB_NAME]
 
+# Async motor client for export services
+motor_client = AsyncIOMotorClient(MONGO_URL)
+motor_db = motor_client[DB_NAME]
+
+# Initialize services
+export_service = ExportService(motor_db)
+holiday_service = HolidayService()
+
 app = FastAPI(title="Shift Roster & Pay Calculator")
 
 # CORS setup
