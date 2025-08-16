@@ -13,7 +13,7 @@ class ShiftRosterAPITester:
         self.shift_templates = []
         self.roster_entries = []
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, params=None):
+    def run_test(self, name, method, endpoint, expected_status, data=None, params=None, expect_json=True):
         """Run a single API test"""
         url = f"{self.base_url}/{endpoint}"
         headers = {'Content-Type': 'application/json'}
@@ -36,23 +36,38 @@ class ShiftRosterAPITester:
             if success:
                 self.tests_passed += 1
                 print(f"✅ Passed - Status: {response.status_code}")
-                try:
-                    response_data = response.json()
-                    if isinstance(response_data, list) and len(response_data) > 0:
-                        print(f"   Response: {len(response_data)} items returned")
-                    elif isinstance(response_data, dict):
-                        print(f"   Response keys: {list(response_data.keys())}")
-                except:
-                    print(f"   Response: {response.text[:100]}...")
+                
+                if expect_json:
+                    try:
+                        response_data = response.json()
+                        if isinstance(response_data, list) and len(response_data) > 0:
+                            print(f"   Response: {len(response_data)} items returned")
+                        elif isinstance(response_data, dict):
+                            print(f"   Response keys: {list(response_data.keys())}")
+                        return success, response_data
+                    except:
+                        print(f"   Response: {response.text[:100]}...")
+                        return success, {}
+                else:
+                    # For non-JSON responses (CSV, PDF, Excel)
+                    content_type = response.headers.get('content-type', '')
+                    content_length = len(response.content)
+                    print(f"   Content-Type: {content_type}")
+                    print(f"   Content-Length: {content_length} bytes")
+                    if content_length > 0:
+                        print(f"   ✅ Non-empty response received")
+                    else:
+                        print(f"   ⚠️  Empty response")
+                    return success, response.content
             else:
                 print(f"❌ Failed - Expected {expected_status}, got {response.status_code}")
                 print(f"   Response: {response.text[:200]}...")
 
-            return success, response.json() if response.status_code < 400 else {}
+            return success, response.json() if expect_json and response.status_code < 400 else response.content
 
         except Exception as e:
             print(f"❌ Failed - Error: {str(e)}")
-            return False, {}
+            return False, {} if expect_json else b''
 
     def test_health_check(self):
         """Test health endpoint"""
