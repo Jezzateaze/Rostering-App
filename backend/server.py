@@ -518,6 +518,206 @@ async def add_individual_shift(entry: RosterEntry):
     db.roster.insert_one(entry.dict())
     return entry
 
+# ====== EXPORT ENDPOINTS ======
+
+@app.get("/api/export/shift-roster/csv")
+async def export_shift_roster_csv(
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    department: Optional[str] = Query(None, description="Department filter")
+):
+    """Export shift roster data as CSV format"""
+    try:
+        # Parse dates if provided
+        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date() if start_date else None
+        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date() if end_date else None
+        
+        # Fetch data
+        shift_data = await export_service.get_shift_roster_data(
+            start_date=start_date_obj,
+            end_date=end_date_obj,
+            department=department
+        )
+        
+        # Generate CSV content
+        csv_content = export_service.generate_csv_content(shift_data)
+        
+        # Create filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"shift_roster_{timestamp}.csv"
+        
+        return StreamingResponse(
+            iter([csv_content]),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
+
+@app.get("/api/export/pay-summary/csv")
+async def export_pay_summary_csv(
+    pay_period_start: Optional[str] = Query(None, description="Pay period start date (YYYY-MM-DD)"),
+    pay_period_end: Optional[str] = Query(None, description="Pay period end date (YYYY-MM-DD)")
+):
+    """Export pay summary data as CSV format"""
+    try:
+        # Parse dates if provided
+        start_date_obj = datetime.strptime(pay_period_start, "%Y-%m-%d").date() if pay_period_start else None
+        end_date_obj = datetime.strptime(pay_period_end, "%Y-%m-%d").date() if pay_period_end else None
+        
+        # Fetch data
+        pay_data = await export_service.get_pay_summary_data(
+            pay_period_start=start_date_obj,
+            pay_period_end=end_date_obj
+        )
+        
+        # Generate CSV content
+        csv_content = export_service.generate_csv_content(pay_data)
+        
+        # Create filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"pay_summary_{timestamp}.csv"
+        
+        return StreamingResponse(
+            iter([csv_content]),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
+
+@app.get("/api/export/workforce-data/excel")
+async def export_workforce_data_excel():
+    """Export comprehensive workforce data as Excel format with multiple sheets"""
+    try:
+        # Fetch all required data
+        shift_data = await export_service.get_shift_roster_data()
+        pay_data = await export_service.get_pay_summary_data()
+        employee_data = await export_service.get_workforce_data()
+        
+        # Prepare data sheets
+        data_sheets = {
+            "Shift Roster": shift_data,
+            "Pay Summary": pay_data,
+            "Employee Data": employee_data
+        }
+        
+        # Generate Excel content
+        excel_content = export_service.generate_excel_content(data_sheets)
+        
+        # Create filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"workforce_data_{timestamp}.xlsx"
+        
+        return StreamingResponse(
+            io.BytesIO(excel_content),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
+
+@app.get("/api/export/pay-summary/pdf")
+async def export_pay_summary_pdf(
+    pay_period_start: Optional[str] = Query(None, description="Pay period start date (YYYY-MM-DD)"),
+    pay_period_end: Optional[str] = Query(None, description="Pay period end date (YYYY-MM-DD)")
+):
+    """Export pay summary as formatted PDF report"""
+    try:
+        # Parse dates if provided
+        start_date_obj = datetime.strptime(pay_period_start, "%Y-%m-%d").date() if pay_period_start else None
+        end_date_obj = datetime.strptime(pay_period_end, "%Y-%m-%d").date() if pay_period_end else None
+        
+        # Fetch data
+        pay_data = await export_service.get_pay_summary_data(
+            pay_period_start=start_date_obj,
+            pay_period_end=end_date_obj
+        )
+        
+        # Generate title
+        period_text = ""
+        if start_date_obj and end_date_obj:
+            period_text = f" - {start_date_obj} to {end_date_obj}"
+        title = f"Pay Summary Report{period_text}"
+        
+        # Generate PDF content
+        pdf_content = export_service.generate_pdf_content(title, pay_data)
+        
+        # Create filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"pay_summary_{timestamp}.pdf"
+        
+        return StreamingResponse(
+            io.BytesIO(pdf_content),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF export failed: {str(e)}")
+
+# ====== HOLIDAY ENDPOINTS ======
+
+@app.get("/api/holidays/check/{date}")
+async def check_public_holiday(
+    date: str,
+    location: str = Query("QLD", description="Location (QLD, Brisbane)")
+):
+    """Check if a specific date is a Queensland public holiday"""
+    try:
+        check_date = datetime.strptime(date, "%Y-%m-%d").date()
+        is_holiday = holiday_service.is_public_holiday(check_date, location)
+        holiday_name = holiday_service.get_holiday_name(check_date) if is_holiday else ""
+        
+        return {
+            "date": date,
+            "is_public_holiday": is_holiday,
+            "holiday_name": holiday_name,
+            "location": location
+        }
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Holiday check failed: {str(e)}")
+
+@app.get("/api/holidays/range")
+async def get_holidays_in_range(
+    start_date: str = Query(..., description="Start date (YYYY-MM-DD)"),
+    end_date: str = Query(..., description="End date (YYYY-MM-DD)"),
+    location: str = Query("QLD", description="Location (QLD, Brisbane)")
+):
+    """Get all public holidays in a date range"""
+    try:
+        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+        
+        holidays = holiday_service.get_holidays_in_range(start_date_obj, end_date_obj, location)
+        
+        return {
+            "holidays": holidays,
+            "start_date": start_date,
+            "end_date": end_date,
+            "location": location,
+            "count": len(holidays)
+        }
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Holiday range check failed: {str(e)}")
+
+# ====== END EXPORT/HOLIDAY ENDPOINTS ======
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
