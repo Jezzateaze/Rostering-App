@@ -340,14 +340,18 @@ function App() {
   const clearMonthlyRoster = async () => {
     try {
       const monthString = currentDate.toISOString().slice(0, 7);
-      const confirmClear = window.confirm(`Are you sure you want to clear all roster entries for ${monthString}? This cannot be undone.`);
+      const confirmClear = window.confirm(`Are you sure you want to clear all roster entries for ${currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}? This cannot be undone.`);
       
       if (confirmClear) {
-        await axios.delete(`${API_BASE_URL}/api/roster/month/${monthString}`);
+        console.log('Clearing roster for month:', monthString);
+        const response = await axios.delete(`${API_BASE_URL}/api/roster/month/${monthString}`);
+        console.log('Clear roster response:', response.data);
+        alert(`Successfully cleared roster for ${currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`);
         fetchRosterData();
       }
     } catch (error) {
       console.error('Error clearing roster:', error);
+      alert(`Error clearing roster: ${error.response?.data?.message || error.message}`);
     }
   };
 
