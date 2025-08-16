@@ -1025,155 +1025,207 @@ function App() {
               <Separator />
 
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Pay Rates</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <h3 className="text-lg font-semibold">Pay Rates (Per Hour)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Weekday Day Rate</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.rates.weekday_day}
-                      onChange={(e) => {
-                        const newSettings = {
-                          ...settings,
-                          rates: {
-                            ...settings.rates,
-                            weekday_day: parseFloat(e.target.value) || 0
-                          }
-                        };
-                        setSettings(newSettings);
-                      }}
-                    />
+                    <Label>Weekday Day Rate (6am-8pm)</Label>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">$</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={settings.rates.weekday_day}
+                        onChange={(e) => {
+                          const newSettings = {
+                            ...settings,
+                            rates: {
+                              ...settings.rates,
+                              weekday_day: parseFloat(e.target.value) || 0
+                            }
+                          };
+                          setSettings(newSettings);
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">Starts at/after 6:00am, ends at/before 8:00pm</p>
                   </div>
                   <div>
-                    <Label>Weekday Evening Rate</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.rates.weekday_evening}
-                      onChange={(e) => {
-                        const newSettings = {
-                          ...settings,
-                          rates: {
-                            ...settings.rates,
-                            weekday_evening: parseFloat(e.target.value) || 0
-                          }
-                        };
-                        setSettings(newSettings);
-                      }}
-                    />
+                    <Label>Weekday Evening Rate (after 8pm)</Label>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">$</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={settings.rates.weekday_evening}
+                        onChange={(e) => {
+                          const newSettings = {
+                            ...settings,
+                            rates: {
+                              ...settings.rates,
+                              weekday_evening: parseFloat(e.target.value) || 0
+                            }
+                          };
+                          setSettings(newSettings);
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">Starts after 8:00pm OR extends past 8:00pm</p>
                   </div>
                   <div>
-                    <Label>Weekday Night Rate</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.rates.weekday_night}
-                      onChange={(e) => {
-                        const newSettings = {
-                          ...settings,
-                          rates: {
-                            ...settings.rates,
-                            weekday_night: parseFloat(e.target.value) || 0
-                          }
-                        };
-                        setSettings(newSettings);
-                      }}
-                    />
+                    <Label>Weekday Night Rate (overnight)</Label>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">$</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={settings.rates.weekday_night}
+                        onChange={(e) => {
+                          const newSettings = {
+                            ...settings,
+                            rates: {
+                              ...settings.rates,
+                              weekday_night: parseFloat(e.target.value) || 0
+                            }
+                          };
+                          setSettings(newSettings);
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">Commences at/before midnight and finishes after midnight</p>
                   </div>
                   <div>
-                    <Label>Saturday Rate</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.rates.saturday}
-                      onChange={(e) => {
-                        const newSettings = {
-                          ...settings,
-                          rates: {
-                            ...settings.rates,
-                            saturday: parseFloat(e.target.value) || 0
-                          }
-                        };
-                        setSettings(newSettings);
-                      }}
-                    />
+                    <Label>Saturday Rate (all hours)</Label>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">$</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={settings.rates.saturday}
+                        onChange={(e) => {
+                          const newSettings = {
+                            ...settings,
+                            rates: {
+                              ...settings.rates,
+                              saturday: parseFloat(e.target.value) || 0
+                            }
+                          };
+                          setSettings(newSettings);
+                        }}
+                      />
+                    </div>
                   </div>
                   <div>
-                    <Label>Sunday Rate</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.rates.sunday}
-                      onChange={(e) => {
-                        const newSettings = {
-                          ...settings,
-                          rates: {
-                            ...settings.rates,
-                            sunday: parseFloat(e.target.value) || 0
-                          }
-                        };
-                        setSettings(newSettings);
-                      }}
-                    />
+                    <Label>Sunday Rate (all hours)</Label>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">$</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={settings.rates.sunday}
+                        onChange={(e) => {
+                          const newSettings = {
+                            ...settings,
+                            rates: {
+                              ...settings.rates,
+                              sunday: parseFloat(e.target.value) || 0
+                            }
+                          };
+                          setSettings(newSettings);
+                        }}
+                      />
+                    </div>
                   </div>
                   <div>
-                    <Label>Public Holiday Rate</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.rates.public_holiday}
-                      onChange={(e) => {
-                        const newSettings = {
-                          ...settings,
-                          rates: {
-                            ...settings.rates,
-                            public_holiday: parseFloat(e.target.value) || 0
-                          }
-                        };
-                        setSettings(newSettings);
-                      }}
-                    />
+                    <Label>Public Holiday Rate (all hours)</Label>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">$</span>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={settings.rates.public_holiday}
+                        onChange={(e) => {
+                          const newSettings = {
+                            ...settings,
+                            rates: {
+                              ...settings.rates,
+                              public_holiday: parseFloat(e.target.value) || 0
+                            }
+                          };
+                          setSettings(newSettings);
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Sleepover Allowance (Default)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.rates.sleepover_default}
-                      onChange={(e) => {
-                        const newSettings = {
-                          ...settings,
-                          rates: {
-                            ...settings.rates,
-                            sleepover_default: parseFloat(e.target.value) || 0
-                          }
-                        };
-                        setSettings(newSettings);
-                      }}
-                    />
+                <Separator />
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Sleepover Allowances</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Sleepover Allowance (Default)</Label>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm">$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={settings.rates.sleepover_default}
+                          onChange={(e) => {
+                            const newSettings = {
+                              ...settings,
+                              rates: {
+                                ...settings.rates,
+                                sleepover_default: parseFloat(e.target.value) || 0
+                              }
+                            };
+                            setSettings(newSettings);
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">$175 per night includes 2 hours wake time</p>
+                    </div>
+                    <div>
+                      <Label>Sleepover Allowance (SCHADS)</Label>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm">$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={settings.rates.sleepover_schads}
+                          onChange={(e) => {
+                            const newSettings = {
+                              ...settings,
+                              rates: {
+                                ...settings.rates,
+                                sleepover_schads: parseFloat(e.target.value) || 0
+                              }
+                            };
+                            setSettings(newSettings);
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">SCHADS Award compliant rate</p>
+                    </div>
                   </div>
-                  <div>
-                    <Label>Sleepover Allowance (SCHADS)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.rates.sleepover_schads}
-                      onChange={(e) => {
-                        const newSettings = {
-                          ...settings,
-                          rates: {
-                            ...settings.rates,
-                            sleepover_schads: parseFloat(e.target.value) || 0
-                          }
-                        };
-                        setSettings(newSettings);
-                      }}
-                    />
-                  </div>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-semibold text-blue-800 mb-2">SCHADS Award Rules:</h4>
+                  <ul className="text-xs text-blue-700 space-y-1">
+                    <li>• <strong>Day:</strong> Starts at/after 6:00am and ends at/before 8:00pm</li>
+                    <li>• <strong>Evening:</strong> Starts after 8:00pm OR any shift that extends past 8:00pm</li>
+                    <li>• <strong>Night:</strong> Commences at/before midnight and finishes after midnight</li>
+                    <li>• <strong>Sleepover:</strong> $175 includes 2 hours wake time, additional at hourly rate</li>
+                  </ul>
                 </div>
               </div>
 
