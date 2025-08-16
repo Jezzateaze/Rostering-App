@@ -1842,7 +1842,7 @@ function App() {
             </DialogHeader>
             <div className="space-y-4">
               <p className="text-sm text-slate-600">
-                Save the current month's roster pattern as a reusable template. Staff assignments will not be saved - only shift times and configurations.
+                Save the current month's weekly pattern as a reusable template. The pattern will be applied by day-of-week (Monday shifts go to Mondays, Tuesday shifts go to Tuesdays, etc.) when generating new months.
               </p>
               
               <div>
