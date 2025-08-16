@@ -692,6 +692,358 @@ class ShiftRosterAPITester:
         
         return False
 
+    def test_export_csv_shift_roster(self):
+        """Test CSV export for shift roster data"""
+        print(f"\n📊 Testing CSV Export - Shift Roster...")
+        
+        # Test without filters
+        success, response = self.run_test(
+            "Export Shift Roster CSV (No Filters)",
+            "GET",
+            "api/export/shift-roster/csv",
+            200
+        )
+        
+        if success:
+            print(f"   ✅ CSV export successful without filters")
+        
+        # Test with date filters
+        start_date = "2025-01-01"
+        end_date = "2025-01-31"
+        
+        success_filtered, response_filtered = self.run_test(
+            "Export Shift Roster CSV (With Date Filters)",
+            "GET",
+            "api/export/shift-roster/csv",
+            200,
+            params={"start_date": start_date, "end_date": end_date}
+        )
+        
+        if success_filtered:
+            print(f"   ✅ CSV export successful with date filters")
+        
+        return success and success_filtered
+
+    def test_export_csv_pay_summary(self):
+        """Test CSV export for pay summary data"""
+        print(f"\n💰 Testing CSV Export - Pay Summary...")
+        
+        # Test without filters
+        success, response = self.run_test(
+            "Export Pay Summary CSV (No Filters)",
+            "GET",
+            "api/export/pay-summary/csv",
+            200
+        )
+        
+        if success:
+            print(f"   ✅ Pay summary CSV export successful without filters")
+        
+        # Test with pay period filters
+        pay_start = "2025-01-01"
+        pay_end = "2025-01-31"
+        
+        success_filtered, response_filtered = self.run_test(
+            "Export Pay Summary CSV (With Pay Period)",
+            "GET",
+            "api/export/pay-summary/csv",
+            200,
+            params={"pay_period_start": pay_start, "pay_period_end": pay_end}
+        )
+        
+        if success_filtered:
+            print(f"   ✅ Pay summary CSV export successful with pay period filters")
+        
+        return success and success_filtered
+
+    def test_export_excel_workforce(self):
+        """Test Excel export for comprehensive workforce data"""
+        print(f"\n📈 Testing Excel Export - Workforce Data...")
+        
+        success, response = self.run_test(
+            "Export Workforce Data Excel (Multi-sheet)",
+            "GET",
+            "api/export/workforce-data/excel",
+            200
+        )
+        
+        if success:
+            print(f"   ✅ Excel export successful - comprehensive multi-sheet export")
+        
+        return success
+
+    def test_export_pdf_pay_summary(self):
+        """Test PDF export for pay summary"""
+        print(f"\n📄 Testing PDF Export - Pay Summary...")
+        
+        # Test without filters
+        success, response = self.run_test(
+            "Export Pay Summary PDF (No Filters)",
+            "GET",
+            "api/export/pay-summary/pdf",
+            200
+        )
+        
+        if success:
+            print(f"   ✅ PDF export successful without filters")
+        
+        # Test with period filters
+        pay_start = "2025-01-01"
+        pay_end = "2025-01-31"
+        
+        success_filtered, response_filtered = self.run_test(
+            "Export Pay Summary PDF (With Period)",
+            "GET",
+            "api/export/pay-summary/pdf",
+            200,
+            params={"pay_period_start": pay_start, "pay_period_end": pay_end}
+        )
+        
+        if success_filtered:
+            print(f"   ✅ PDF export successful with period filters")
+        
+        return success and success_filtered
+
+    def test_queensland_holiday_detection(self):
+        """Test Queensland public holiday detection endpoints"""
+        print(f"\n🎄 Testing Queensland Public Holiday Detection...")
+        
+        # Test specific known holidays
+        test_cases = [
+            {
+                "date": "2025-01-01",
+                "name": "New Year's Day",
+                "expected": True,
+                "location": "QLD"
+            },
+            {
+                "date": "2025-04-18",
+                "name": "Good Friday",
+                "expected": True,
+                "location": "QLD"
+            },
+            {
+                "date": "2025-08-13",
+                "name": "Royal Queensland Show (Brisbane only)",
+                "expected": True,
+                "location": "Brisbane"
+            },
+            {
+                "date": "2025-08-13",
+                "name": "Royal Queensland Show (Non-Brisbane QLD)",
+                "expected": False,
+                "location": "QLD"
+            },
+            {
+                "date": "2025-06-15",
+                "name": "Regular non-holiday date",
+                "expected": False,
+                "location": "QLD"
+            }
+        ]
+        
+        all_passed = True
+        
+        for test_case in test_cases:
+            print(f"\n   Testing: {test_case['name']} ({test_case['date']})")
+            
+            params = {"location": test_case["location"]} if test_case["location"] != "QLD" else {}
+            
+            success, response = self.run_test(
+                f"Check Holiday: {test_case['date']}",
+                "GET",
+                f"api/holidays/check/{test_case['date']}",
+                200,
+                params=params
+            )
+            
+            if success:
+                is_holiday = response.get("is_public_holiday", False)
+                holiday_name = response.get("holiday_name", "")
+                location = response.get("location", "")
+                
+                print(f"      Result: {'Holiday' if is_holiday else 'Not Holiday'}")
+                print(f"      Holiday name: {holiday_name}")
+                print(f"      Location: {location}")
+                
+                if is_holiday == test_case["expected"]:
+                    print(f"      ✅ Correct holiday detection")
+                else:
+                    print(f"      ❌ Incorrect holiday detection - Expected: {test_case['expected']}, Got: {is_holiday}")
+                    all_passed = False
+            else:
+                print(f"      ❌ Failed to check holiday")
+                all_passed = False
+        
+        return all_passed
+
+    def test_holiday_range_endpoint(self):
+        """Test holiday range endpoint"""
+        print(f"\n📅 Testing Holiday Range Endpoint...")
+        
+        success, response = self.run_test(
+            "Get Holidays in Range (2025 full year)",
+            "GET",
+            "api/holidays/range",
+            200,
+            params={
+                "start_date": "2025-01-01",
+                "end_date": "2025-12-31",
+                "location": "QLD"
+            }
+        )
+        
+        if success:
+            holidays = response.get("holidays", [])
+            count = response.get("count", 0)
+            
+            print(f"   Found {count} holidays in 2025 for QLD")
+            
+            # Display first few holidays
+            for i, holiday in enumerate(holidays[:5]):
+                print(f"      {holiday['date']}: {holiday['name']}")
+            
+            if count > 5:
+                print(f"      ... and {count - 5} more holidays")
+            
+            # Verify we have reasonable number of holidays (should be 10+ for QLD)
+            if count >= 10:
+                print(f"   ✅ Reasonable number of holidays found")
+                return True
+            else:
+                print(f"   ❌ Too few holidays found - expected 10+, got {count}")
+                return False
+        
+        return False
+
+    def test_integrated_holiday_roster_creation(self):
+        """Test creating roster entries on public holidays and verify $88.50/hr rate"""
+        print(f"\n🎯 Testing Integrated Holiday Roster Creation...")
+        
+        # Create roster entry for New Year's Day 2025 (known QLD public holiday)
+        holiday_entry = {
+            "id": "",  # Will be auto-generated
+            "date": "2025-01-01",  # New Year's Day
+            "shift_template_id": "test-holiday-template",
+            "start_time": "09:00",
+            "end_time": "17:00",
+            "is_sleepover": False,
+            "is_public_holiday": False,  # Let system auto-detect
+            "staff_id": None,
+            "staff_name": "Test Staff",
+            "hours_worked": 0.0,
+            "base_pay": 0.0,
+            "sleepover_allowance": 0.0,
+            "total_pay": 0.0
+        }
+        
+        success, response = self.run_test(
+            "Create Roster Entry on Public Holiday (Auto-detect)",
+            "POST",
+            "api/roster",
+            200,
+            data=holiday_entry
+        )
+        
+        if success:
+            hours_worked = response.get('hours_worked', 0)
+            total_pay = response.get('total_pay', 0)
+            base_pay = response.get('base_pay', 0)
+            is_public_holiday = response.get('is_public_holiday', False)
+            
+            print(f"   Holiday auto-detected: {is_public_holiday}")
+            print(f"   Hours worked: {hours_worked}")
+            print(f"   Base pay: ${base_pay}")
+            print(f"   Total pay: ${total_pay}")
+            
+            # Expected: 8 hours * $88.50/hr = $708.00
+            expected_pay = 8.0 * 88.50
+            
+            if is_public_holiday and abs(total_pay - expected_pay) < 0.01:
+                print(f"   ✅ Public holiday correctly detected and $88.50/hr rate applied")
+                return True
+            else:
+                print(f"   ❌ Public holiday rate not correctly applied")
+                print(f"      Expected: ${expected_pay:.2f}, Got: ${total_pay:.2f}")
+                return False
+        
+        return False
+
+    def test_export_with_holiday_data(self):
+        """Test that export functionality works with holiday-integrated data"""
+        print(f"\n📊 Testing Export with Holiday Data...")
+        
+        # First create some roster entries including holidays
+        self.test_integrated_holiday_roster_creation()
+        
+        # Test CSV export includes holiday data
+        success_csv, response_csv = self.run_test(
+            "Export CSV with Holiday Data",
+            "GET",
+            "api/export/shift-roster/csv",
+            200,
+            params={"start_date": "2025-01-01", "end_date": "2025-01-31"}
+        )
+        
+        # Test PDF export includes holiday data
+        success_pdf, response_pdf = self.run_test(
+            "Export PDF with Holiday Data",
+            "GET",
+            "api/export/pay-summary/pdf",
+            200,
+            params={"pay_period_start": "2025-01-01", "pay_period_end": "2025-01-31"}
+        )
+        
+        if success_csv and success_pdf:
+            print(f"   ✅ Export functionality works with holiday-integrated data")
+            return True
+        else:
+            print(f"   ❌ Export functionality failed with holiday data")
+            return False
+
+    def test_comprehensive_export_and_holiday_system(self):
+        """Comprehensive test of export and holiday systems"""
+        print(f"\n🎯 COMPREHENSIVE EXPORT & HOLIDAY SYSTEM TEST")
+        print("=" * 60)
+        
+        test_results = []
+        
+        # Export functionality tests
+        print("\n📊 EXPORT FUNCTIONALITY TESTS")
+        test_results.append(("CSV Shift Roster Export", self.test_export_csv_shift_roster()))
+        test_results.append(("CSV Pay Summary Export", self.test_export_csv_pay_summary()))
+        test_results.append(("Excel Workforce Export", self.test_export_excel_workforce()))
+        test_results.append(("PDF Pay Summary Export", self.test_export_pdf_pay_summary()))
+        
+        # Holiday detection tests
+        print("\n🎄 HOLIDAY DETECTION TESTS")
+        test_results.append(("Queensland Holiday Detection", self.test_queensland_holiday_detection()))
+        test_results.append(("Holiday Range Endpoint", self.test_holiday_range_endpoint()))
+        
+        # Integration tests
+        print("\n🔗 INTEGRATION TESTS")
+        test_results.append(("Holiday Roster Integration", self.test_integrated_holiday_roster_creation()))
+        test_results.append(("Export with Holiday Data", self.test_export_with_holiday_data()))
+        
+        # Summary
+        passed_tests = sum(1 for _, result in test_results if result)
+        total_tests = len(test_results)
+        
+        print(f"\n" + "=" * 60)
+        print(f"📊 EXPORT & HOLIDAY SYSTEM RESULTS: {passed_tests}/{total_tests} tests passed")
+        print("=" * 60)
+        
+        for test_name, result in test_results:
+            status = "✅ PASSED" if result else "❌ FAILED"
+            print(f"   {status}: {test_name}")
+        
+        if passed_tests == total_tests:
+            print(f"\n🎉 ALL EXPORT & HOLIDAY SYSTEM TESTS PASSED!")
+            return True
+        else:
+            print(f"\n⚠️  SOME EXPORT & HOLIDAY SYSTEM TESTS FAILED!")
+            return False
+
 def main():
     print("🚀 Starting Shift Roster & Pay Calculator API Tests")
     print("🎯 FOCUS: Testing Delete Functionality (User Reported Issues)")
