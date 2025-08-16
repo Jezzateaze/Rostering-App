@@ -103,10 +103,10 @@ def determine_shift_type(date_str: str, start_time: str, end_time: str, is_publi
         # Weekday Night: starts at/before midnight or before 6am
         if start_hour >= 22 or start_hour < 6:
             return ShiftType.WEEKDAY_NIGHT
-        # Weekday Evening: starts after 8pm
-        elif start_hour >= 20:
+        # Weekday Evening: starts after 8pm, or 3pm-8pm range for evening shifts
+        elif start_hour >= 20 or (start_hour >= 15 and start_hour < 20):
             return ShiftType.WEEKDAY_EVENING
-        # Weekday Day: 6am-8pm
+        # Weekday Day: 6am-3pm
         else:
             return ShiftType.WEEKDAY_DAY
 
