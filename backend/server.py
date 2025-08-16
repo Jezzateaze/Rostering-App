@@ -151,27 +151,43 @@ def calculate_pay(roster_entry: RosterEntry, settings: Settings) -> RosterEntry:
     hours = calculate_hours_worked(roster_entry.start_time, roster_entry.end_time)
     roster_entry.hours_worked = hours
     
-    # Determine shift type
-    shift_type = determine_shift_type(
-        roster_entry.date, 
-        roster_entry.start_time, 
-        roster_entry.end_time,
-        roster_entry.is_public_holiday
-    )
-    
-    # Get hourly rate
-    if shift_type == ShiftType.PUBLIC_HOLIDAY:
-        hourly_rate = settings.rates["public_holiday"]
-    elif shift_type == ShiftType.SATURDAY:
-        hourly_rate = settings.rates["saturday"]
-    elif shift_type == ShiftType.SUNDAY:
-        hourly_rate = settings.rates["sunday"]
-    elif shift_type == ShiftType.WEEKDAY_EVENING:
-        hourly_rate = settings.rates["weekday_evening"]
-    elif shift_type == ShiftType.WEEKDAY_NIGHT:
-        hourly_rate = settings.rates["weekday_night"]
+    # Use manual hourly rate if provided
+    if roster_entry.manual_hourly_rate:
+        hourly_rate = roster_entry.manual_hourly_rate
     else:
-        hourly_rate = settings.rates["weekday_day"]
+        # Use manual shift type if provided, otherwise determine automatically
+        if roster_entry.manual_shift_type:
+            shift_type_map = {
+                "weekday_day": ShiftType.WEEKDAY_DAY,
+                "weekday_evening": ShiftType.WEEKDAY_EVENING,
+                "weekday_night": ShiftType.WEEKDAY_NIGHT,
+                "saturday": ShiftType.SATURDAY,
+                "sunday": ShiftType.SUNDAY,
+                "public_holiday": ShiftType.PUBLIC_HOLIDAY
+            }
+            shift_type = shift_type_map.get(roster_entry.manual_shift_type, ShiftType.WEEKDAY_DAY)
+        else:
+            # Determine shift type automatically
+            shift_type = determine_shift_type(
+                roster_entry.date, 
+                roster_entry.start_time, 
+                roster_entry.end_time,
+                roster_entry.is_public_holiday
+            )
+        
+        # Get hourly rate based on shift type
+        if shift_type == ShiftType.PUBLIC_HOLIDAY:
+            hourly_rate = settings.rates["public_holiday"]
+        elif shift_type == ShiftType.SATURDAY:
+            hourly_rate = settings.rates["saturday"]
+        elif shift_type == ShiftType.SUNDAY:
+            hourly_rate = settings.rates["sunday"]
+        elif shift_type == ShiftType.WEEKDAY_EVENING:
+            hourly_rate = settings.rates["weekday_evening"]
+        elif shift_type == ShiftType.WEEKDAY_NIGHT:
+            hourly_rate = settings.rates["weekday_night"]
+        else:
+            hourly_rate = settings.rates["weekday_day"]
     
     # Calculate base pay
     if roster_entry.is_sleepover:
