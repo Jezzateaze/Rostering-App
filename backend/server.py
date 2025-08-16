@@ -65,6 +65,8 @@ class RosterEntry(BaseModel):
     end_time: str
     is_sleepover: bool = False
     is_public_holiday: bool = False
+    manual_shift_type: Optional[str] = None  # Manual override for shift type
+    manual_hourly_rate: Optional[float] = None  # Manual override for hourly rate
     hours_worked: float = 0.0
     base_pay: float = 0.0
     sleepover_allowance: float = 0.0
