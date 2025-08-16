@@ -478,8 +478,14 @@ async def update_settings(settings: Settings):
 
 # Generate monthly roster
 @app.post("/api/generate-roster/{month}")
-async def generate_monthly_roster(month: str):
-    """Generate roster entries for a month based on shift templates"""
+async def generate_monthly_roster(month: str, template_id: Optional[str] = None):
+    """Generate roster entries for a month based on shift templates or saved roster template"""
+    
+    # If template_id is provided, use the saved roster template
+    if template_id:
+        return generate_roster_from_template(template_id, month)
+    
+    # Otherwise, use the default shift template generation
     year, month_num = map(int, month.split("-"))
     
     # Get shift templates
@@ -523,7 +529,7 @@ async def generate_monthly_roster(month: str):
                 db.roster.insert_one(entry.dict())
                 entries_created += 1
     
-    return {"message": f"Generated {entries_created} roster entries for {month}"}
+    return {"message": f"Generated {entries_created} roster entries for {month} using default templates"}
 
 # Clear roster for a month
 @app.delete("/api/roster/month/{month}")
