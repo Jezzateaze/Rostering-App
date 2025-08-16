@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Frontend (Vite/React)",
+      "type": "shell",
+      "command": "bash .devcontainer/scripts/start-frontend.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Start Backend (API)",
+      "type": "shell",
+      "command": "bash .devcontainer/scripts/start-backend.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Start BOTH (frontend + backend)",
+      "dependsOn": ["Start Backend (API)", "Start Frontend (Vite/React)"],
+      "dependsOrder": "parallel"
+    }
+  ]
+}
