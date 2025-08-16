@@ -373,6 +373,8 @@ class ShiftRosterAPITester:
                     analysis_passed = False
         
         return analysis_passed
+
+    def test_roster_assignment(self):
         """Test assigning staff to roster entries"""
         if not self.roster_entries or not self.staff_data:
             print("⚠️  No roster entries or staff data available for assignment test")
