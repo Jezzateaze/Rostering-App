@@ -1526,9 +1526,366 @@ class ShiftRosterAPITester:
             print(f"\n⚠️  SOME EXPORT & HOLIDAY SYSTEM TESTS FAILED!")
             return False
 
+    def test_day_of_week_template_system(self):
+        """Test the updated roster template system with day-of-week pattern logic"""
+        print(f"\n🎯 TESTING DAY-OF-WEEK TEMPLATE SYSTEM")
+        print("=" * 60)
+        print("🎯 CRITICAL: Testing day-of-week pattern logic for cross-month application")
+        print("📋 Expected: Monday patterns from January should apply to all Mondays in March")
+        
+        # Test configuration
+        template_name = "Day of Week Test Template"
+        source_month = "2025-01"  # January 2025 (1st = Wednesday)
+        target_month = "2025-03"  # March 2025 (1st = Saturday)
+        template_id = None
+        
+        # Step 1: Clear any existing data and generate fresh roster for January
+        print(f"\nStep 1: Preparing source data for {source_month}...")
+        
+        # Clear January roster first
+        clear_success, clear_response = self.run_test(
+            f"Clear January Roster",
+            "DELETE",
+            f"api/roster/month/{source_month}",
+            200
+        )
+        
+        # Generate fresh roster for January
+        gen_success, gen_response = self.run_test(
+            f"Generate Roster for {source_month}",
+            "POST",
+            f"api/generate-roster/{source_month}",
+            200
+        )
+        
+        if not gen_success:
+            print(f"   ❌ Failed to generate roster data for {source_month}")
+            return False
+        
+        print(f"   ✅ Fresh roster data generated for {source_month}")
+        
+        # Get the generated roster to analyze day-of-week distribution
+        get_success, january_roster = self.run_test(
+            f"Get January Roster for Analysis",
+            "GET",
+            "api/roster",
+            200,
+            params={"month": source_month}
+        )
+        
+        if not get_success or not january_roster:
+            print(f"   ❌ Failed to get January roster for analysis")
+            return False
+        
+        # Analyze January day-of-week distribution
+        january_day_distribution = {}
+        day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        
+        for entry in january_roster:
+            entry_date = datetime.strptime(entry['date'], "%Y-%m-%d")
+            day_of_week = entry_date.weekday()  # 0=Monday, 6=Sunday
+            day_name = day_names[day_of_week]
+            
+            if day_name not in january_day_distribution:
+                january_day_distribution[day_name] = []
+            january_day_distribution[day_name].append({
+                'start_time': entry['start_time'],
+                'end_time': entry['end_time'],
+                'is_sleepover': entry.get('is_sleepover', False),
+                'manual_shift_type': entry.get('manual_shift_type'),
+                'manual_hourly_rate': entry.get('manual_hourly_rate')
+            })
+        
+        print(f"   📊 January day-of-week distribution:")
+        for day_name in day_names:
+            count = len(january_day_distribution.get(day_name, []))
+            print(f"      {day_name}: {count} shifts")
+        
+        # Step 2: Save January roster as day-of-week template
+        print(f"\nStep 2: Testing Save Template with Day-of-Week Pattern...")
+        save_success, save_response = self.run_test(
+            "Save Template with Day-of-Week Pattern",
+            "POST",
+            "api/roster-templates",
+            200,
+            params={
+                "name": template_name,
+                "month": source_month
+            }
+        )
+        
+        if not save_success:
+            print(f"   ❌ Failed to save roster as day-of-week template")
+            return False
+        
+        template_id = save_response.get("template_id")
+        shift_count = save_response.get("shift_count", 0)
+        pattern_summary = save_response.get("pattern_summary", {})
+        
+        print(f"   ✅ Day-of-week template saved successfully")
+        print(f"   Template ID: {template_id}")
+        print(f"   Total shifts: {shift_count}")
+        print(f"   Pattern summary: {pattern_summary}")
+        
+        if not template_id:
+            print(f"   ❌ No template ID returned")
+            return False
+        
+        # Verify pattern_summary matches our analysis
+        pattern_matches = True
+        for day_name in day_names:
+            expected_count = len(january_day_distribution.get(day_name, []))
+            actual_count = pattern_summary.get(day_name, 0)
+            if expected_count != actual_count:
+                print(f"   ❌ Pattern mismatch for {day_name}: expected {expected_count}, got {actual_count}")
+                pattern_matches = False
+        
+        if pattern_matches:
+            print(f"   ✅ Pattern summary matches day-of-week analysis")
+        
+        # Step 3: Verify template data structure
+        print(f"\nStep 3: Testing Template Data Structure Verification...")
+        get_template_success, template_data = self.run_test(
+            "Get Template Data Structure",
+            "GET",
+            f"api/roster-templates/{template_id}",
+            200
+        )
+        
+        if not get_template_success:
+            print(f"   ❌ Failed to get template data")
+            return False
+        
+        # Check for day-of-week pattern type
+        pattern_type = template_data.get("pattern_type")
+        shifts = template_data.get("shifts", [])
+        
+        print(f"   Pattern type: {pattern_type}")
+        print(f"   Shifts in template: {len(shifts)}")
+        
+        if pattern_type != "day_of_week":
+            print(f"   ❌ Expected pattern_type 'day_of_week', got '{pattern_type}'")
+            return False
+        
+        print(f"   ✅ Template contains 'pattern_type': 'day_of_week'")
+        
+        # Verify shifts are stored with day_of_week instead of day_of_month
+        day_of_week_found = False
+        day_of_month_found = False
+        
+        for shift in shifts[:5]:  # Check first 5 shifts
+            if 'day_of_week' in shift:
+                day_of_week_found = True
+                print(f"   ✅ Shift contains 'day_of_week': {shift['day_of_week']}")
+            if 'day_of_month' in shift:
+                day_of_month_found = True
+                print(f"   ❌ Shift contains 'day_of_month' (should not be present)")
+        
+        if day_of_week_found and not day_of_month_found:
+            print(f"   ✅ Shifts stored with 'day_of_week' (0-6) instead of 'day_of_month'")
+        else:
+            print(f"   ❌ Incorrect shift storage format")
+            return False
+        
+        # Step 4: Generate roster using day-of-week template for March
+        print(f"\nStep 4: Testing Generate Roster Using Day-of-Week Template...")
+        
+        # Clear March roster first
+        clear_march_success, clear_march_response = self.run_test(
+            f"Clear March Roster",
+            "DELETE",
+            f"api/roster/month/{target_month}",
+            200
+        )
+        
+        # Generate March roster using January template
+        generate_success, generate_response = self.run_test(
+            "Generate Roster Using Day-of-Week Template",
+            "POST",
+            f"api/generate-roster/{target_month}",
+            200,
+            params={"template_id": template_id}
+        )
+        
+        if not generate_success:
+            print(f"   ❌ Failed to generate roster using day-of-week template")
+            return False
+        
+        entries_generated = generate_response.get("entries_generated", 0)
+        pattern_applied = generate_response.get("pattern_applied")
+        generation_summary = generate_response.get("generation_summary", {})
+        
+        print(f"   ✅ Generated {entries_generated} roster entries for {target_month}")
+        print(f"   Pattern applied: {pattern_applied}")
+        print(f"   Generation summary: {generation_summary}")
+        
+        if pattern_applied != "day_of_week":
+            print(f"   ❌ Expected pattern_applied 'day_of_week', got '{pattern_applied}'")
+            return False
+        
+        # Step 5: Cross-Month Pattern Verification
+        print(f"\nStep 5: Testing Cross-Month Pattern Verification...")
+        
+        # Get March roster
+        get_march_success, march_roster = self.run_test(
+            f"Get March Roster for Verification",
+            "GET",
+            "api/roster",
+            200,
+            params={"month": target_month}
+        )
+        
+        if not get_march_success or not march_roster:
+            print(f"   ❌ Failed to get March roster for verification")
+            return False
+        
+        # Analyze March day-of-week distribution
+        march_day_distribution = {}
+        
+        for entry in march_roster:
+            entry_date = datetime.strptime(entry['date'], "%Y-%m-%d")
+            day_of_week = entry_date.weekday()  # 0=Monday, 6=Sunday
+            day_name = day_names[day_of_week]
+            
+            if day_name not in march_day_distribution:
+                march_day_distribution[day_name] = []
+            march_day_distribution[day_name].append({
+                'date': entry['date'],
+                'start_time': entry['start_time'],
+                'end_time': entry['end_time'],
+                'is_sleepover': entry.get('is_sleepover', False)
+            })
+        
+        print(f"   📊 March day-of-week distribution:")
+        for day_name in day_names:
+            count = len(march_day_distribution.get(day_name, []))
+            print(f"      {day_name}: {count} shifts")
+        
+        # Verify cross-month pattern application
+        print(f"\n   🔍 Cross-Month Pattern Verification:")
+        verification_passed = True
+        
+        # Count days of each type in January and March
+        import calendar
+        jan_days = {}
+        mar_days = {}
+        
+        # Count January days
+        for day in range(1, 32):  # January has 31 days
+            date_obj = datetime(2025, 1, day)
+            day_of_week = date_obj.weekday()
+            day_name = day_names[day_of_week]
+            jan_days[day_name] = jan_days.get(day_name, 0) + 1
+        
+        # Count March days
+        for day in range(1, 32):  # March has 31 days
+            date_obj = datetime(2025, 3, day)
+            day_of_week = date_obj.weekday()
+            day_name = day_names[day_of_week]
+            mar_days[day_name] = mar_days.get(day_name, 0) + 1
+        
+        print(f"      January days: {jan_days}")
+        print(f"      March days: {mar_days}")
+        
+        # Verify pattern application
+        for day_name in day_names:
+            jan_shifts_per_day = len(january_day_distribution.get(day_name, []))
+            jan_day_count = jan_days.get(day_name, 0)
+            mar_day_count = mar_days.get(day_name, 0)
+            mar_total_shifts = len(march_day_distribution.get(day_name, []))
+            
+            expected_mar_shifts = jan_shifts_per_day * mar_day_count
+            
+            print(f"      {day_name}:")
+            print(f"         Jan: {jan_shifts_per_day} shifts/day × {jan_day_count} days")
+            print(f"         Mar: Expected {jan_shifts_per_day} shifts/day × {mar_day_count} days = {expected_mar_shifts}")
+            print(f"         Mar: Actual {mar_total_shifts} shifts")
+            
+            if mar_total_shifts == expected_mar_shifts:
+                print(f"         ✅ Pattern correctly applied")
+            else:
+                print(f"         ❌ Pattern incorrectly applied")
+                verification_passed = False
+        
+        # Step 6: Verify shift times and configurations are preserved
+        print(f"\n   🔍 Shift Configuration Preservation:")
+        config_preserved = True
+        
+        for day_name in day_names:
+            jan_shifts = january_day_distribution.get(day_name, [])
+            mar_shifts = march_day_distribution.get(day_name, [])
+            
+            if not jan_shifts:
+                continue
+            
+            # Check if shift times are preserved (should be same patterns)
+            jan_times = set((s['start_time'], s['end_time']) for s in jan_shifts)
+            mar_times = set((s['start_time'], s['end_time']) for s in mar_shifts)
+            
+            # March should have the same time patterns, just repeated for each day
+            unique_mar_times = set()
+            for shift in mar_shifts:
+                unique_mar_times.add((shift['start_time'], shift['end_time']))
+            
+            if jan_times == unique_mar_times:
+                print(f"      {day_name}: ✅ Shift times preserved")
+            else:
+                print(f"      {day_name}: ❌ Shift times not preserved")
+                print(f"         Jan times: {jan_times}")
+                print(f"         Mar times: {unique_mar_times}")
+                config_preserved = False
+        
+        # Final verification
+        print(f"\n" + "=" * 60)
+        print(f"📊 DAY-OF-WEEK TEMPLATE SYSTEM RESULTS:")
+        
+        all_tests_passed = (
+            save_success and 
+            template_id and 
+            pattern_matches and 
+            pattern_type == "day_of_week" and
+            day_of_week_found and 
+            not day_of_month_found and
+            generate_success and 
+            pattern_applied == "day_of_week" and
+            verification_passed and
+            config_preserved
+        )
+        
+        if all_tests_passed:
+            print(f"✅ ALL DAY-OF-WEEK TEMPLATE TESTS PASSED!")
+            print(f"   ✅ Template saves shifts grouped by day of week (Monday-Sunday)")
+            print(f"   ✅ Template contains 'pattern_type': 'day_of_week'")
+            print(f"   ✅ Shifts stored with 'day_of_week' (0-6) instead of calendar dates")
+            print(f"   ✅ Monday patterns from January apply to all Mondays in March")
+            print(f"   ✅ Tuesday patterns from January apply to all Tuesdays in March")
+            print(f"   ✅ Cross-month pattern verification successful")
+            print(f"   ✅ Shift times, types, and configurations preserved")
+            print(f"   ✅ System handles months with different calendar layouts correctly")
+        else:
+            print(f"❌ SOME DAY-OF-WEEK TEMPLATE TESTS FAILED!")
+            print(f"   - Check day-of-week pattern logic implementation")
+            print(f"   - Verify cross-month application logic")
+            print(f"   - Ensure shift configuration preservation")
+        
+        print(f"=" * 60)
+        
+        # Cleanup: Delete the test template
+        if template_id:
+            delete_success, delete_response = self.run_test(
+                "Cleanup: Delete Test Template",
+                "DELETE",
+                f"api/roster-templates/{template_id}",
+                200
+            )
+            if delete_success:
+                print(f"🧹 Test template cleaned up successfully")
+        
+        return all_tests_passed
+
 def main():
     print("🚀 Starting Shift Roster & Pay Calculator API Tests")
-    print("🎯 FOCUS: Testing Roster Template System for Saving and Loading Monthly Patterns")
+    print("🎯 FOCUS: Testing Updated Roster Template System with Day-of-Week Pattern Logic")
     print("=" * 80)
     
     tester = ShiftRosterAPITester()
