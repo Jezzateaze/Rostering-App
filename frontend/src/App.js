@@ -303,7 +303,7 @@ function App() {
       return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Saturday</Badge>;
     }
     
-    // Weekday logic following SCHADS Award rules
+    // For weekdays (Monday=1 to Friday=5), determine shift type
     const startHour = parseInt(entry.start_time.split(':')[0]);
     const startMin = parseInt(entry.start_time.split(':')[1]);
     const endHour = parseInt(entry.end_time.split(':')[0]);
@@ -323,9 +323,9 @@ function App() {
     if (startHour >= 22 || startHour < 6 || (startMinutes < 24 * 60 && endMinutes > 24 * 60)) {
       return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Night</Badge>;
     }
-    // SCHADS Rule: Evening shifts (starts after 8pm OR extends past 8pm)
+    // SCHADS Rule: Evening shifts (starts after 8pm OR extends PAST 8pm, not AT 8pm)
     else if (startMinutes >= eveningStartMinutes || 
-             (startMinutes < eveningStartMinutes && endMinutes >= eveningStartMinutes)) {
+             (startMinutes < eveningStartMinutes && endMinutes > eveningStartMinutes)) {
       return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Evening</Badge>;
     }
     // Day shifts (6am-8pm, doesn't extend past 8pm)
