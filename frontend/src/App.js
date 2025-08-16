@@ -119,15 +119,31 @@ function App() {
     }
   };
 
-  const updateSettings = async (newSettings) => {
+  const updateShiftTemplate = async (templateId, updates) => {
     try {
-      await axios.put(`${API_BASE_URL}/api/settings`, newSettings);
-      setSettings(newSettings);
-      setShowSettingsDialog(false);
-      // Refresh roster to recalculate pay
+      const template = shiftTemplates.find(t => t.id === templateId);
+      const updatedTemplate = { ...template, ...updates };
+      
+      await axios.put(`${API_BASE_URL}/api/shift-templates/${templateId}`, updatedTemplate);
+      fetchInitialData();
+    } catch (error) {
+      console.error('Error updating shift template:', error);
+    }
+  };
+
+  const updateShiftTime = async (entryId, newStartTime, newEndTime) => {
+    try {
+      const entry = rosterEntries.find(e => e.id === entryId);
+      const updatedEntry = { 
+        ...entry, 
+        start_time: newStartTime, 
+        end_time: newEndTime 
+      };
+      
+      await axios.put(`${API_BASE_URL}/api/roster/${entryId}`, updatedEntry);
       fetchRosterData();
     } catch (error) {
-      console.error('Error updating settings:', error);
+      console.error('Error updating shift time:', error);
     }
   };
 
