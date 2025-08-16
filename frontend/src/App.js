@@ -1867,7 +1867,7 @@ function App() {
 
               <div className="bg-amber-50 p-3 rounded">
                 <p className="text-xs text-amber-700">
-                  <strong>Note:</strong> This will save all shifts from the current month ({currentDate.toISOString().slice(0, 7)}) as a template pattern.
+                  <strong>Note:</strong> This will save the weekly pattern from {currentDate.toISOString().slice(0, 7)} (Monday shifts → Mondays, Tuesday shifts → Tuesdays, etc.).
                 </p>
               </div>
 
