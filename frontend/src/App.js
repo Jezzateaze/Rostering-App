@@ -43,6 +43,13 @@ function App() {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [showBreakWarning, setShowBreakWarning] = useState(false);
   const [breakWarningData, setBreakWarningData] = useState(null);
+  const [showAddShiftDialog, setShowAddShiftDialog] = useState(false);
+  const [newShift, setNewShift] = useState({
+    date: '',
+    start_time: '09:00',
+    end_time: '17:00',
+    is_sleepover: false
+  });
   const [newStaffName, setNewStaffName] = useState('');
   const [activeTab, setActiveTab] = useState('roster');
 
