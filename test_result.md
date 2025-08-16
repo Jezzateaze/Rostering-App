@@ -360,9 +360,12 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Shift Type Classification Fix - SCHADS Award Compliance"
-    - "Export Functionality Implementation"
-    - "Queensland Public Holiday Integration"
+    - "Roster Template System - Save Current Roster as Template"
+    - "Roster Template System - Get All Templates"
+    - "Roster Template System - Generate Roster from Template"
+    - "Roster Template System - Get Specific Template"
+    - "Roster Template System - Delete Template"
+    - "Updated Generate Roster Endpoint - Default and Template Modes"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
