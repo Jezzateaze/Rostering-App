@@ -104,7 +104,8 @@ function App() {
       const entry = rosterEntries.find(e => e.id === entryId);
       const updatedEntry = { ...entry, ...updates };
       
-      await axios.put(`${API_BASE_URL}/api/roster/${entryId}`, updatedEntry);
+      const response = await axios.put(`${API_BASE_URL}/api/roster/${entryId}`, updatedEntry);
+      console.log('Updated entry:', response.data);
       fetchRosterData();
     } catch (error) {
       console.error('Error updating roster entry:', error);
