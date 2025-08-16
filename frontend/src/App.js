@@ -145,6 +145,22 @@ function App() {
     }
   };
 
+  const updateShiftTime = async (entryId, newStartTime, newEndTime) => {
+    try {
+      const entry = rosterEntries.find(e => e.id === entryId);
+      const updatedEntry = { 
+        ...entry, 
+        start_time: newStartTime, 
+        end_time: newEndTime 
+      };
+      
+      await axios.put(`${API_BASE_URL}/api/roster/${entryId}`, updatedEntry);
+      fetchRosterData();
+    } catch (error) {
+      console.error('Error updating shift time:', error);
+    }
+  };
+
   const checkShiftBreakViolation = (staffId, staffName, newShift) => {
     if (!staffId || !staffName) return null;
 
