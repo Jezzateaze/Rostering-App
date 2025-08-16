@@ -700,6 +700,91 @@ function App() {
           </DialogContent>
         </Dialog>
 
+        {/* Shift Template Edit Dialog */}
+        <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Default Shift Time</DialogTitle>
+            </DialogHeader>
+            {selectedTemplate && (
+              <div className="space-y-4">
+                <div>
+                  <Label>Shift</Label>
+                  <div className="text-sm text-slate-600 mb-2">
+                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][selectedTemplate.day_of_week]} - 
+                    {selectedTemplate.name}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="template-start-time">Start Time</Label>
+                    <Input
+                      id="template-start-time"
+                      type="time"
+                      value={selectedTemplate.start_time}
+                      onChange={(e) => {
+                        setSelectedTemplate({
+                          ...selectedTemplate,
+                          start_time: e.target.value
+                        });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="template-end-time">End Time</Label>
+                    <Input
+                      id="template-end-time"
+                      type="time"
+                      value={selectedTemplate.end_time}
+                      onChange={(e) => {
+                        setSelectedTemplate({
+                          ...selectedTemplate,
+                          end_time: e.target.value
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={selectedTemplate.is_sleepover}
+                    onCheckedChange={(checked) => {
+                      setSelectedTemplate({
+                        ...selectedTemplate,
+                        is_sleepover: checked
+                      });
+                    }}
+                  />
+                  <Label>Sleepover Shift</Label>
+                </div>
+
+                <div className="text-sm text-slate-600 p-3 bg-slate-50 rounded-lg">
+                  <strong>Note:</strong> Changes to default shift times will only affect newly generated rosters. 
+                  Existing roster entries can be edited individually.
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setShowTemplateDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={() => {
+                    updateShiftTemplate(selectedTemplate.id, {
+                      start_time: selectedTemplate.start_time,
+                      end_time: selectedTemplate.end_time,
+                      is_sleepover: selectedTemplate.is_sleepover
+                    });
+                    setShowTemplateDialog(false);
+                  }}>
+                    Save Changes
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Add Staff Dialog */}
         <Dialog open={showStaffDialog} onOpenChange={setShowStaffDialog}>
           <DialogContent className="max-w-md">
