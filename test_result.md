@@ -102,9 +102,24 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the newly implemented export functionality and Queensland public holiday detection system"
+user_problem_statement: "Test the shift type classification fix for SCHADS Award compliance - specifically 15:30-23:30 shifts should be classified as EVENING (not DAY)"
 
 backend:
+  - task: "Shift Type Classification Fix - SCHADS Award Compliance"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of shift type classification fix for 15:30-23:30 shifts to ensure EVENING classification"
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Shift type classification working perfectly. 15:30-23:30 shifts correctly classified as EVENING ($44.50/hr). All SCHADS Award compliance tests passed: 09:00-17:00 (DAY), 15:00-20:00 (DAY - ends exactly at 20:00), 15:00-20:01 (EVENING - extends past 20:00), 15:30-23:30 (EVENING - extends past 20:00), 20:00-06:00 (NIGHT - overnight shift). Logic correctly implements: shifts ending at or before 20:00 are DAY, shifts extending past 20:00 are EVENING."
+
   - task: "CSV Export - Shift Roster"
     implemented: true
     working: true
