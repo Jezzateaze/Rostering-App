@@ -1056,11 +1056,21 @@ function App() {
                     Cancel
                   </Button>
                   <Button onClick={() => {
+                    // Include manual overrides in the update
+                    const updates = {
+                      staff_id: selectedShift.staff_id,
+                      staff_name: selectedShift.staff_name,
+                      start_time: selectedShift.start_time,
+                      end_time: selectedShift.end_time,
+                      manual_shift_type: selectedShift.manual_shift_type,
+                      manual_hourly_rate: selectedShift.manual_hourly_rate
+                    };
+                    
                     // Use break check function for staff assignment and time updates
                     handleStaffAssignmentWithBreakCheck(
                       selectedShift.staff_id,
                       selectedShift.staff_name,
-                      selectedShift
+                      { ...selectedShift, ...updates }
                     );
                   }}>
                     Save Changes
