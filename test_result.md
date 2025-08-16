@@ -285,6 +285,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Shift Type Classification Fix - SCHADS Award Compliance"
     - "Export Functionality Implementation"
     - "Queensland Public Holiday Integration"
   stuck_tasks: []
