@@ -174,8 +174,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Clear Monthly Roster API"
-    - "Delete Individual Shift API"
     - "Clear Roster Button"
     - "Delete Shift Red X Button"
   stuck_tasks:
