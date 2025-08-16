@@ -119,6 +119,27 @@ function App() {
     try {
       const monthString = currentDate.toISOString().slice(0, 7);
       await axios.post(`${API_BASE_URL}/api/generate-roster/${monthString}`);
+      
+      // Also generate roster for previous month dates if they appear in the first week
+      const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const startOfWeek = new Date(firstDay);
+      startOfWeek.setDate(startOfWeek.getDate() - (firstDay.getDay() + 6) % 7); // Start from Monday
+      
+      if (startOfWeek.getMonth() !== firstDay.getMonth()) {
+        const prevMonthString = startOfWeek.toISOString().slice(0, 7);
+        await axios.post(`${API_BASE_URL}/api/generate-roster/${prevMonthString}`);
+      }
+      
+      // Also generate for next month dates if they appear in the last week
+      const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      const endOfWeek = new Date(lastDay);
+      endOfWeek.setDate(endOfWeek.getDate() + (7 - lastDay.getDay()) % 7);
+      
+      if (endOfWeek.getMonth() !== lastDay.getMonth()) {
+        const nextMonthString = endOfWeek.toISOString().slice(0, 7);
+        await axios.post(`${API_BASE_URL}/api/generate-roster/${nextMonthString}`);
+      }
+      
       fetchRosterData();
     } catch (error) {
       console.error('Error generating roster:', error);
