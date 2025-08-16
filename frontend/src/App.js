@@ -566,20 +566,27 @@ function App() {
     const month = currentDate.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
+    
+    // Start from Monday of the week containing the first day
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - (firstDay.getDay() + 6) % 7); // Start from Monday
 
     const weeks = [];
     const currentWeekDate = new Date(startDate);
 
-    while (currentWeekDate <= lastDay || weeks.length === 0 || currentWeekDate.getMonth() === month) {
+    // Generate 6 weeks to ensure we capture the full month view
+    for (let weekNum = 0; weekNum < 6; weekNum++) {
       const week = [];
       for (let i = 0; i < 7; i++) {
         week.push(new Date(currentWeekDate));
         currentWeekDate.setDate(currentWeekDate.getDate() + 1);
       }
       weeks.push(week);
-      if (currentWeekDate.getMonth() !== month && week[6].getMonth() !== month) break;
+      
+      // Stop if we've gone past the current month and captured at least one full week after
+      if (weekNum > 0 && week[0].getMonth() !== month) {
+        break;
+      }
     }
 
     return (
@@ -594,12 +601,28 @@ function App() {
         {weeks.map((week, weekIndex) => (
           <div key={weekIndex} className="grid grid-cols-7">
             {week.map((date, dayIndex) => (
-              <div key={dayIndex} className={`${date.getMonth() !== month ? 'bg-slate-50 text-slate-400' : ''}`}>
+              <div key={dayIndex}>
                 {renderCalendarDay(date)}
               </div>
             ))}
           </div>
         ))}
+        
+        {/* Legend for different month indicators */}
+        <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-center space-x-6 text-xs text-slate-600">
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-white border border-slate-300 rounded"></div>
+            <span>Current Month</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-slate-100 border border-slate-300 rounded"></div>
+            <span>Previous Month</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-slate-50 border border-slate-300 rounded"></div>
+            <span>Next Month</span>
+          </div>
+        </div>
       </div>
     );
   };
