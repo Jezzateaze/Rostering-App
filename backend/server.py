@@ -85,7 +85,7 @@ class Settings(BaseModel):
 
 # Pay calculation functions
 def determine_shift_type(date_str: str, start_time: str, end_time: str, is_public_holiday: bool) -> ShiftType:
-    """Determine the shift type based on date and time"""
+    """Determine the shift type based on date and time according to SCHADS Award rules"""
     date_obj = datetime.strptime(date_str, "%Y-%m-%d")
     day_of_week = date_obj.weekday()  # 0=Monday, 6=Sunday
     
@@ -98,15 +98,34 @@ def determine_shift_type(date_str: str, start_time: str, end_time: str, is_publi
         return ShiftType.SUNDAY
     else:  # Weekday
         start_hour = int(start_time.split(":")[0])
+        start_min = int(start_time.split(":")[1])
         end_hour = int(end_time.split(":")[0])
+        end_min = int(end_time.split(":")[1])
         
-        # Weekday Night: starts at/before midnight or before 6am
-        if start_hour >= 22 or start_hour < 6:
+        # Convert to minutes for precise calculation
+        start_minutes = start_hour * 60 + start_min
+        end_minutes = end_hour * 60 + end_min
+        
+        # Handle overnight shifts
+        if end_minutes <= start_minutes:
+            end_minutes += 24 * 60
+        
+        # SCHADS Award Rule: If shift extends past 8:00 PM (20:00), ENTIRE shift is evening rate
+        evening_start_minutes = 20 * 60  # 8:00 PM
+        midnight_minutes = 24 * 60
+        early_morning_cutoff = 6 * 60  # 6:00 AM
+        
+        # Weekday Night: starts at/before midnight or before 6am, or shift crosses midnight
+        if (start_hour >= 22 or start_hour < 6 or 
+            (start_minutes < midnight_minutes and end_minutes > midnight_minutes)):
             return ShiftType.WEEKDAY_NIGHT
-        # Weekday Evening: starts after 8pm, or 3pm-8pm range for evening shifts
-        elif start_hour >= 20 or (start_hour >= 15 and start_hour < 20):
+        
+        # Weekday Evening: starts after 8pm OR shift extends past 8pm
+        elif (start_minutes >= evening_start_minutes or 
+              (start_minutes < evening_start_minutes and end_minutes > evening_start_minutes)):
             return ShiftType.WEEKDAY_EVENING
-        # Weekday Day: 6am-3pm
+        
+        # Weekday Day: starts at/after 6am and ends at/before 8pm
         else:
             return ShiftType.WEEKDAY_DAY
 
