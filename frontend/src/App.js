@@ -791,15 +791,12 @@ function App() {
                     Cancel
                   </Button>
                   <Button onClick={() => {
-                    // Update both staff assignment and shift times
-                    const updates = {
-                      staff_id: selectedShift.staff_id,
-                      staff_name: selectedShift.staff_name,
-                      start_time: selectedShift.start_time,
-                      end_time: selectedShift.end_time
-                    };
-                    updateRosterEntry(selectedShift.id, updates);
-                    setShowShiftDialog(false);
+                    // Use break check function for staff assignment and time updates
+                    handleStaffAssignmentWithBreakCheck(
+                      selectedShift.staff_id,
+                      selectedShift.staff_name,
+                      selectedShift
+                    );
                   }}>
                     Save Changes
                   </Button>
