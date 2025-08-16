@@ -1004,7 +1004,8 @@ class ShiftRosterAPITester:
             "GET",
             "api/export/shift-roster/csv",
             200,
-            params={"start_date": "2025-01-01", "end_date": "2025-01-31"}
+            params={"start_date": "2025-01-01", "end_date": "2025-01-31"},
+            expect_json=False
         )
         
         # Test PDF export includes holiday data
@@ -1013,10 +1014,11 @@ class ShiftRosterAPITester:
             "GET",
             "api/export/pay-summary/pdf",
             200,
-            params={"pay_period_start": "2025-01-01", "pay_period_end": "2025-01-31"}
+            params={"pay_period_start": "2025-01-01", "pay_period_end": "2025-01-31"},
+            expect_json=False
         )
         
-        if success_csv and success_pdf:
+        if success_csv and success_pdf and len(response_csv) > 0 and len(response_pdf) > 0:
             print(f"   ✅ Export functionality works with holiday-integrated data")
             return True
         else:
