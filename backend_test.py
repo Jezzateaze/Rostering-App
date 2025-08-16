@@ -296,7 +296,83 @@ class ShiftRosterAPITester:
         print(f"\n   Pay calculation tests: {pay_tests_passed}/{len(test_cases)} passed")
         return pay_tests_passed == len(test_cases)
 
-    def test_roster_assignment(self):
+    def analyze_existing_pay_calculations(self):
+        """Analyze existing roster entries to verify pay calculations"""
+        if not self.roster_entries:
+            print("⚠️  No roster entries available for analysis")
+            return False
+        
+        print(f"\n💰 Analyzing Existing Pay Calculations...")
+        print(f"   Analyzing {len(self.roster_entries)} roster entries...")
+        
+        # Group by shift type
+        shift_analysis = {
+            'weekday_day': [],
+            'weekday_evening': [],
+            'weekday_night': [],
+            'saturday': [],
+            'sunday': [],
+            'sleepover': []
+        }
+        
+        for entry in self.roster_entries[:10]:  # Analyze first 10 entries
+            date_obj = datetime.strptime(entry['date'], "%Y-%m-%d")
+            day_of_week = date_obj.weekday()  # 0=Monday, 6=Sunday
+            start_hour = int(entry['start_time'].split(':')[0])
+            
+            if entry.get('is_sleepover'):
+                shift_analysis['sleepover'].append(entry)
+            elif day_of_week == 5:  # Saturday
+                shift_analysis['saturday'].append(entry)
+            elif day_of_week == 6:  # Sunday
+                shift_analysis['sunday'].append(entry)
+            elif start_hour >= 22 or start_hour < 6:
+                shift_analysis['weekday_night'].append(entry)
+            elif start_hour >= 20:
+                shift_analysis['weekday_evening'].append(entry)
+            else:
+                shift_analysis['weekday_day'].append(entry)
+        
+        # Expected rates
+        expected_rates = {
+            'weekday_day': 42.00,
+            'weekday_evening': 44.50,
+            'weekday_night': 48.50,
+            'saturday': 57.50,
+            'sunday': 74.00,
+            'sleepover': 175.00  # Default sleepover allowance
+        }
+        
+        analysis_passed = True
+        
+        for shift_type, entries in shift_analysis.items():
+            if not entries:
+                continue
+                
+            print(f"\n   {shift_type.replace('_', ' ').title()} Shifts:")
+            for entry in entries[:3]:  # Check first 3 of each type
+                hours = entry.get('hours_worked', 0)
+                total_pay = entry.get('total_pay', 0)
+                base_pay = entry.get('base_pay', 0)
+                sleepover_allowance = entry.get('sleepover_allowance', 0)
+                
+                if shift_type == 'sleepover':
+                    expected_pay = expected_rates[shift_type]
+                    actual_pay = sleepover_allowance
+                else:
+                    expected_pay = hours * expected_rates[shift_type]
+                    actual_pay = base_pay
+                
+                pay_correct = abs(actual_pay - expected_pay) < 0.01
+                
+                print(f"      {entry['date']} {entry['start_time']}-{entry['end_time']}: "
+                      f"{hours}h, ${actual_pay:.2f} (expected: ${expected_pay:.2f}) "
+                      f"{'✅' if pay_correct else '❌'}")
+                
+                if not pay_correct:
+                    analysis_passed = False
+        
+        return analysis_passed
         """Test assigning staff to roster entries"""
         if not self.roster_entries or not self.staff_data:
             print("⚠️  No roster entries or staff data available for assignment test")
