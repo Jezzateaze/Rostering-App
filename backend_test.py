@@ -1046,8 +1046,8 @@ class ShiftRosterAPITester:
 
 def main():
     print("🚀 Starting Shift Roster & Pay Calculator API Tests")
-    print("🎯 FOCUS: Testing Delete Functionality (User Reported Issues)")
-    print("=" * 60)
+    print("🎯 FOCUS: Testing Export Functionality & Queensland Public Holiday Detection")
+    print("=" * 80)
     
     tester = ShiftRosterAPITester()
     
@@ -1059,11 +1059,9 @@ def main():
         tester.test_get_settings,
     ]
     
-    # Run DELETE functionality tests (PRIORITY)
-    delete_tests = [
-        tester.test_delete_individual_shift,
-        tester.test_clear_monthly_roster,
-        tester.test_delete_functionality_comprehensive,
+    # Run EXPORT & HOLIDAY functionality tests (PRIORITY)
+    export_holiday_tests = [
+        tester.test_comprehensive_export_and_holiday_system,
     ]
     
     # Run other tests
@@ -1082,15 +1080,15 @@ def main():
         except Exception as e:
             print(f"❌ Test failed with exception: {str(e)}")
     
-    print("\n🎯 Running DELETE FUNCTIONALITY Tests (PRIORITY)...")
-    delete_results = []
-    for test in delete_tests:
+    print("\n🎯 Running EXPORT & HOLIDAY FUNCTIONALITY Tests (PRIORITY)...")
+    export_holiday_results = []
+    for test in export_holiday_tests:
         try:
             result = test()
-            delete_results.append(result)
+            export_holiday_results.append(result)
         except Exception as e:
-            print(f"❌ Delete test failed with exception: {str(e)}")
-            delete_results.append(False)
+            print(f"❌ Export/Holiday test failed with exception: {str(e)}")
+            export_holiday_results.append(False)
     
     print("\n🔧 Running Other Tests...")
     for test in other_tests:
@@ -1100,23 +1098,26 @@ def main():
             print(f"❌ Test failed with exception: {str(e)}")
     
     # Print final results
-    print("\n" + "=" * 60)
+    print("\n" + "=" * 80)
     print(f"📊 Final Results: {tester.tests_passed}/{tester.tests_run} tests passed")
     
-    # Special focus on delete functionality results
-    delete_passed = sum(delete_results)
-    delete_total = len(delete_results)
+    # Special focus on export & holiday functionality results
+    export_holiday_passed = sum(export_holiday_results)
+    export_holiday_total = len(export_holiday_results)
     
-    print(f"🎯 DELETE FUNCTIONALITY Results: {delete_passed}/{delete_total} tests passed")
+    print(f"🎯 EXPORT & HOLIDAY FUNCTIONALITY Results: {export_holiday_passed}/{export_holiday_total} tests passed")
     
-    if delete_passed == delete_total:
-        print("✅ ALL DELETE FUNCTIONALITY TESTS PASSED!")
-        print("   - Individual shift deletion working")
-        print("   - Monthly roster clearing working")
-        print("   - Comprehensive delete scenarios working")
+    if export_holiday_passed == export_holiday_total:
+        print("✅ ALL EXPORT & HOLIDAY FUNCTIONALITY TESTS PASSED!")
+        print("   - CSV export endpoints working")
+        print("   - Excel export endpoint working")
+        print("   - PDF export endpoint working")
+        print("   - Queensland public holiday detection working")
+        print("   - Holiday integration with roster working")
+        print("   - Export with holiday data working")
     else:
-        print("❌ DELETE FUNCTIONALITY ISSUES DETECTED!")
-        print("   This explains why user reports delete buttons not working")
+        print("❌ EXPORT & HOLIDAY FUNCTIONALITY ISSUES DETECTED!")
+        print("   Check the detailed output above for specific failures")
     
     if tester.tests_passed == tester.tests_run:
         print("🎉 All tests passed!")
