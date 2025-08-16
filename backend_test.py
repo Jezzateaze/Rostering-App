@@ -179,28 +179,51 @@ class ShiftRosterAPITester:
         return success
 
     def test_pay_calculations(self):
-        """Test pay calculation accuracy"""
-        print(f"\n💰 Testing Pay Calculations...")
+        """Test pay calculation accuracy - FOCUS ON SCHADS EVENING SHIFT RULES"""
+        print(f"\n💰 Testing SCHADS Award Pay Calculations...")
+        print("🎯 CRITICAL TEST: Evening shift rule - 'Starts after 8:00pm OR extends past 8:00pm'")
         
-        # Test data for different shift types
+        # Test data for SCHADS evening shift scenarios
         test_cases = [
             {
-                "name": "Weekday Day Shift (7:30-15:30)",
+                "name": "15:30-23:30 shift (extends past 8pm) - CRITICAL TEST",
                 "date": "2025-01-06",  # Monday
-                "start_time": "07:30",
-                "end_time": "15:30",
+                "start_time": "15:30",
+                "end_time": "23:30",
                 "expected_hours": 8.0,
-                "expected_rate": 42.00,
-                "expected_pay": 336.00
+                "expected_rate": 44.50,  # Evening rate
+                "expected_pay": 356.00,  # 8 * 44.50
+                "shift_type": "EVENING"
             },
             {
-                "name": "Weekday Evening Shift (15:00-20:00)",
+                "name": "15:00-20:00 shift (extends past 8pm) - CRITICAL TEST",
                 "date": "2025-01-06",  # Monday
                 "start_time": "15:00",
                 "end_time": "20:00",
                 "expected_hours": 5.0,
-                "expected_rate": 44.50,
-                "expected_pay": 222.50
+                "expected_rate": 44.50,  # Evening rate
+                "expected_pay": 222.50,  # 5 * 44.50
+                "shift_type": "EVENING"
+            },
+            {
+                "name": "20:30-23:30 shift (starts after 8pm) - CRITICAL TEST",
+                "date": "2025-01-06",  # Monday
+                "start_time": "20:30",
+                "end_time": "23:30",
+                "expected_hours": 3.0,
+                "expected_rate": 44.50,  # Evening rate
+                "expected_pay": 133.50,  # 3 * 44.50
+                "shift_type": "EVENING"
+            },
+            {
+                "name": "07:30-15:30 shift (ends before 8pm) - CONTROL TEST",
+                "date": "2025-01-06",  # Monday
+                "start_time": "07:30",
+                "end_time": "15:30",
+                "expected_hours": 8.0,
+                "expected_rate": 42.00,  # Day rate
+                "expected_pay": 336.00,  # 8 * 42.00
+                "shift_type": "DAY"
             },
             {
                 "name": "Weekday Night Shift (23:30-07:30)",
@@ -211,7 +234,8 @@ class ShiftRosterAPITester:
                 "expected_rate": 48.50,
                 "expected_pay": 388.00,
                 "is_sleepover": True,
-                "expected_sleepover": 175.00
+                "expected_sleepover": 175.00,
+                "shift_type": "NIGHT"
             },
             {
                 "name": "Saturday Shift (07:30-15:30)",
@@ -220,7 +244,8 @@ class ShiftRosterAPITester:
                 "end_time": "15:30",
                 "expected_hours": 8.0,
                 "expected_rate": 57.50,
-                "expected_pay": 460.00
+                "expected_pay": 460.00,
+                "shift_type": "SATURDAY"
             },
             {
                 "name": "Sunday Shift (07:30-15:30)",
@@ -229,7 +254,8 @@ class ShiftRosterAPITester:
                 "end_time": "15:30",
                 "expected_hours": 8.0,
                 "expected_rate": 74.00,
-                "expected_pay": 592.00
+                "expected_pay": 592.00,
+                "shift_type": "SUNDAY"
             }
         ]
 
