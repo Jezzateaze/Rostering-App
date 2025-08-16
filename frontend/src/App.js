@@ -75,7 +75,8 @@ function App() {
       const [staffRes, templatesRes, settingsRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/api/staff`),
         axios.get(`${API_BASE_URL}/api/shift-templates`),
-        axios.get(`${API_BASE_URL}/api/settings`)
+        axios.get(`${API_BASE_URL}/api/settings`),
+        fetchRosterTemplates()
       ]);
       
       setStaff(staffRes.data);
