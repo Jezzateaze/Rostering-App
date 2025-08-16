@@ -563,12 +563,15 @@ function App() {
                 </div>
               </div>
               <button
-                className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
+                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center hover:bg-red-600 transition-colors z-10 shadow-sm border border-white"
                 onClick={(e) => {
                   e.stopPropagation();
+                  e.preventDefault();
+                  console.log('Delete button clicked for shift:', entry.id);
                   deleteShift(entry.id);
                 }}
                 title="Delete shift"
+                style={{ fontSize: '10px', lineHeight: '1' }}
               >
                 ×
               </button>
