@@ -418,7 +418,8 @@ class HolidayService:
                         "name": holiday_name,
                         "location": location
                     })
-                current_date = current_date.replace(day=current_date.day + 1)
+                # Fix: Use timedelta to increment date properly
+                current_date = current_date + timedelta(days=1)
             
             return holidays_list
             
