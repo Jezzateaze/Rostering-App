@@ -741,11 +741,12 @@ function App() {
                         });
                       } else {
                         const staff_member = staff.find(s => s.id === staffId);
-                        setSelectedShift({
+                        const updatedShift = {
                           ...selectedShift,
                           staff_id: staffId,
                           staff_name: staff_member ? staff_member.name : null
-                        });
+                        };
+                        setSelectedShift(updatedShift);
                       }
                     }}
                   >
