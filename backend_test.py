@@ -452,6 +452,245 @@ class ShiftRosterAPITester:
         
         return success
 
+    def test_delete_individual_shift(self):
+        """Test deleting individual roster entries - CRITICAL DELETE FUNCTIONALITY"""
+        print(f"\n🗑️  Testing Individual Shift Deletion...")
+        
+        # First, ensure we have some roster entries to delete
+        if not self.roster_entries:
+            print("   No roster entries available, generating test data...")
+            current_month = datetime.now().strftime("%Y-%m")
+            self.test_generate_roster()
+            self.test_get_roster()
+        
+        if not self.roster_entries:
+            print("   ❌ No roster entries available for deletion test")
+            return False
+        
+        # Test 1: Delete with valid ID
+        entry_to_delete = self.roster_entries[0]
+        entry_id = entry_to_delete['id']
+        
+        print(f"   🎯 Testing deletion of entry: {entry_to_delete['date']} {entry_to_delete['start_time']}-{entry_to_delete['end_time']}")
+        
+        success, response = self.run_test(
+            "Delete Individual Shift (Valid ID)",
+            "DELETE",
+            f"api/roster/{entry_id}",
+            200
+        )
+        
+        if success:
+            print(f"   ✅ Successfully deleted roster entry")
+            print(f"   Response: {response.get('message', 'No message')}")
+            
+            # Verify the entry is actually deleted by trying to get it
+            verify_success, verify_response = self.run_test(
+                "Verify Deletion (Should get 404)",
+                "DELETE",
+                f"api/roster/{entry_id}",
+                404
+            )
+            
+            if verify_success:
+                print(f"   ✅ Deletion verified - entry no longer exists")
+            else:
+                print(f"   ❌ Deletion verification failed - entry may still exist")
+                success = False
+        
+        # Test 2: Delete with invalid ID (should return 404)
+        invalid_id = "non-existent-id-12345"
+        
+        invalid_success, invalid_response = self.run_test(
+            "Delete Individual Shift (Invalid ID)",
+            "DELETE",
+            f"api/roster/{invalid_id}",
+            404
+        )
+        
+        if invalid_success:
+            print(f"   ✅ Correctly returned 404 for invalid ID")
+        else:
+            print(f"   ❌ Should have returned 404 for invalid ID")
+        
+        return success and invalid_success
+
+    def test_clear_monthly_roster(self):
+        """Test clearing entire monthly roster - CRITICAL DELETE FUNCTIONALITY"""
+        print(f"\n🗑️  Testing Monthly Roster Clearing...")
+        
+        # Use current month for testing
+        current_month = datetime.now().strftime("%Y-%m")
+        
+        # First, ensure we have roster data for the month
+        print(f"   Ensuring roster data exists for {current_month}...")
+        self.test_generate_roster()
+        
+        # Get roster count before deletion
+        before_success, before_response = self.run_test(
+            f"Get Roster Count Before Deletion",
+            "GET",
+            "api/roster",
+            200,
+            params={"month": current_month}
+        )
+        
+        entries_before = len(before_response) if before_success else 0
+        print(f"   Roster entries before deletion: {entries_before}")
+        
+        if entries_before == 0:
+            print("   ⚠️  No roster entries found to delete")
+            return False
+        
+        # Test clearing the monthly roster
+        success, response = self.run_test(
+            f"Clear Monthly Roster for {current_month}",
+            "DELETE",
+            f"api/roster/month/{current_month}",
+            200
+        )
+        
+        if success:
+            message = response.get('message', '')
+            print(f"   ✅ Clear roster response: {message}")
+            
+            # Extract deleted count from message
+            import re
+            match = re.search(r'Deleted (\d+) roster entries', message)
+            deleted_count = int(match.group(1)) if match else 0
+            
+            print(f"   Deleted {deleted_count} entries")
+            
+            # Verify the roster is actually cleared
+            after_success, after_response = self.run_test(
+                f"Verify Roster Cleared",
+                "GET",
+                "api/roster",
+                200,
+                params={"month": current_month}
+            )
+            
+            if after_success:
+                entries_after = len(after_response)
+                print(f"   Roster entries after deletion: {entries_after}")
+                
+                if entries_after == 0:
+                    print(f"   ✅ Monthly roster successfully cleared")
+                    return True
+                else:
+                    print(f"   ❌ Roster not fully cleared - {entries_after} entries remain")
+                    return False
+            else:
+                print(f"   ❌ Could not verify roster clearing")
+                return False
+        else:
+            print(f"   ❌ Failed to clear monthly roster")
+            return False
+
+    def test_delete_functionality_comprehensive(self):
+        """Comprehensive test of all delete functionality"""
+        print(f"\n🎯 COMPREHENSIVE DELETE FUNCTIONALITY TEST")
+        print("=" * 50)
+        
+        # Test month for comprehensive testing
+        test_month = datetime.now().strftime("%Y-%m")
+        
+        # Step 1: Generate fresh test data
+        print(f"Step 1: Generating test data for {test_month}...")
+        gen_success = self.test_generate_roster()
+        if not gen_success:
+            print("❌ Failed to generate test data")
+            return False
+        
+        # Step 2: Get initial roster count
+        get_success, initial_roster = self.run_test(
+            "Get Initial Roster Count",
+            "GET",
+            "api/roster",
+            200,
+            params={"month": test_month}
+        )
+        
+        if not get_success:
+            print("❌ Failed to get initial roster")
+            return False
+        
+        initial_count = len(initial_roster)
+        print(f"   Initial roster entries: {initial_count}")
+        
+        if initial_count == 0:
+            print("❌ No roster entries to test deletion")
+            return False
+        
+        # Step 3: Test individual deletion
+        print(f"\nStep 2: Testing individual shift deletion...")
+        entry_to_delete = initial_roster[0]
+        
+        delete_success, delete_response = self.run_test(
+            "Delete Single Entry",
+            "DELETE",
+            f"api/roster/{entry_to_delete['id']}",
+            200
+        )
+        
+        if not delete_success:
+            print("❌ Individual deletion failed")
+            return False
+        
+        # Step 4: Verify individual deletion
+        get_success, after_individual = self.run_test(
+            "Get Roster After Individual Delete",
+            "GET",
+            "api/roster",
+            200,
+            params={"month": test_month}
+        )
+        
+        if get_success:
+            after_individual_count = len(after_individual)
+            expected_count = initial_count - 1
+            
+            if after_individual_count == expected_count:
+                print(f"   ✅ Individual deletion verified: {after_individual_count} entries (was {initial_count})")
+            else:
+                print(f"   ❌ Individual deletion failed: expected {expected_count}, got {after_individual_count}")
+                return False
+        
+        # Step 5: Test monthly clearing
+        print(f"\nStep 3: Testing monthly roster clearing...")
+        clear_success, clear_response = self.run_test(
+            "Clear Monthly Roster",
+            "DELETE",
+            f"api/roster/month/{test_month}",
+            200
+        )
+        
+        if not clear_success:
+            print("❌ Monthly clearing failed")
+            return False
+        
+        # Step 6: Verify monthly clearing
+        get_success, final_roster = self.run_test(
+            "Get Roster After Monthly Clear",
+            "GET",
+            "api/roster",
+            200,
+            params={"month": test_month}
+        )
+        
+        if get_success:
+            final_count = len(final_roster)
+            
+            if final_count == 0:
+                print(f"   ✅ Monthly clearing verified: {final_count} entries remaining")
+                print(f"\n🎉 ALL DELETE FUNCTIONALITY TESTS PASSED!")
+                return True
+            else:
+                print(f"   ❌ Monthly clearing failed: {final_count} entries still exist")
+                return False
+        
+        return False
+
 def main():
     print("🚀 Starting Shift Roster & Pay Calculator API Tests")
     print("=" * 60)
