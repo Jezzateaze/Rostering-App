@@ -75,7 +75,7 @@ class RosterTemplate(BaseModel):
     created_at: datetime = None
     
 class RosterTemplateShift(BaseModel):
-    day_of_month: int  # 1-31
+    day_of_week: int  # 0=Monday, 1=Tuesday, ..., 6=Sunday
     start_time: str
     end_time: str
     is_sleepover: bool = False
