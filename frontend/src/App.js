@@ -925,6 +925,49 @@ function App() {
                 <div className="space-y-3">
                   <h4 className="font-medium text-slate-700">Pay Calculation & Overrides</h4>
                   
+                  <div className="flex items-center space-x-4 p-3 bg-blue-50 rounded-lg">
+                    <Switch
+                      checked={selectedShift.manual_sleepover !== null ? selectedShift.manual_sleepover : selectedShift.is_sleepover}
+                      onCheckedChange={(checked) => {
+                        setSelectedShift({
+                          ...selectedShift,
+                          manual_sleepover: checked,
+                          manual_shift_type: checked ? 'sleepover' : null
+                        });
+                      }}
+                    />
+                    <div>
+                      <Label className="font-medium">Sleepover Shift</Label>
+                      <p className="text-xs text-slate-600">$175 flat rate includes 2 hours wake time</p>
+                    </div>
+                  </div>
+                  
+                  {(selectedShift.manual_sleepover || selectedShift.is_sleepover) && (
+                    <div>
+                      <Label htmlFor="wake-hours">Additional Wake Hours (beyond 2 hours)</Label>
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          id="wake-hours"
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="8"
+                          placeholder="0"
+                          value={selectedShift.wake_hours || ''}
+                          onChange={(e) => {
+                            const wakeHours = parseFloat(e.target.value) || 0;
+                            setSelectedShift({
+                              ...selectedShift,
+                              wake_hours: wakeHours
+                            });
+                          }}
+                        />
+                        <span className="text-sm text-slate-600">hours</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">Extra wake time paid at applicable hourly rate</p>
+                    </div>
+                  )}
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Shift Type Override</Label>
@@ -932,9 +975,11 @@ function App() {
                         value={selectedShift.manual_shift_type || "auto"}
                         onValueChange={(value) => {
                           const manualType = value === "auto" ? null : value;
+                          const isSleepover = value === "sleepover";
                           setSelectedShift({
                             ...selectedShift,
-                            manual_shift_type: manualType
+                            manual_shift_type: manualType,
+                            manual_sleepover: isSleepover ? true : (manualType ? false : null)
                           });
                         }}
                       >
@@ -949,6 +994,7 @@ function App() {
                           <SelectItem value="saturday">Saturday ($57.50/hr)</SelectItem>
                           <SelectItem value="sunday">Sunday ($74.00/hr)</SelectItem>
                           <SelectItem value="public_holiday">Public Holiday ($88.50/hr)</SelectItem>
+                          <SelectItem value="sleepover">Sleepover ($175 + extra wake hours)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
