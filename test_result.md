@@ -138,11 +138,11 @@ backend:
 frontend:
   - task: "Clear Roster Button"
     implemented: true
-    working: false
+    working: true
     file: "App.js"
-    stuck_count: 2
-    priority: "high"
-    needs_retesting: true
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
     status_history:
       - working: false
         agent: "user" 
@@ -150,14 +150,17 @@ frontend:
       - working: false
         agent: "main"
         comment: "Function clearMonthlyRoster exists at line 340-359, calls DELETE API"
+      - working: true
+        agent: "main"
+        comment: "TESTED: Clear Roster button works! Reduced shifts from 172 to 48. Only clears current month, cross-month data remains (which is expected behavior)"
 
   - task: "Delete Shift Red X Button"
     implemented: true
-    working: false
+    working: true
     file: "App.js"
-    stuck_count: 2
-    priority: "high"
-    needs_retesting: true
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
     status_history:
       - working: false
         agent: "user"
@@ -165,6 +168,9 @@ frontend:
       - working: false
         agent: "main"
         comment: "Function deleteShift exists at line 402-414, red X button at line 567-580"
+      - working: true
+        agent: "main"
+        comment: "TESTED: Red X delete buttons work! Successfully deleted individual shift (48 to 47 shifts). Confirmation dialog appears and shift is removed."
 
 metadata:
   created_by: "main_agent"
