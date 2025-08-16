@@ -416,6 +416,7 @@ def main():
         tester.test_get_settings,
         tester.test_generate_roster,
         tester.test_get_roster,
+        tester.analyze_existing_pay_calculations,
         tester.test_pay_calculations,
         tester.test_roster_assignment,
     ]
