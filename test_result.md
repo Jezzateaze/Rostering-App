@@ -105,6 +105,57 @@
 user_problem_statement: "Test the updated roster template system with day-of-week pattern logic for cross-month application"
 
 backend:
+  - task: "Day-of-Week Template System - Save Template with Day-of-Week Pattern"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "User requested testing of updated roster template system with day-of-week pattern logic"
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Day-of-week template save working perfectly. Successfully saved 124 shifts from January 2025 as template with pattern_type='day_of_week'. Template groups shifts by day of week (Monday-Sunday) instead of calendar dates. Pattern summary shows correct distribution: Wednesday(20), Thursday(20), Friday(20), Saturday(16), Sunday(16), Monday(16), Tuesday(16)."
+
+  - task: "Day-of-Week Template System - Generate Roster Using Day-of-Week Template"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Day-of-week roster generation working perfectly. Generated 544 entries for March 2025 from January template. Monday patterns from January correctly applied to all Mondays in March (80 shifts), Tuesday patterns applied to all Tuesdays (64 shifts), etc. Cross-month pattern verification successful - system handles months with different calendar layouts correctly."
+
+  - task: "Day-of-Week Template System - Cross-Month Pattern Verification"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Cross-month pattern verification working perfectly. January patterns (1st=Wednesday) correctly applied to March (1st=Saturday). Monday shifts: Jan 16/day × 4 days → Mar 16/day × 5 days = 80 shifts (actual: 80). All day-of-week patterns preserved correctly across different month layouts."
+
+  - task: "Day-of-Week Template System - Template Data Structure Verification"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Template data structure working perfectly. Template contains 'pattern_type': 'day_of_week'. Shifts stored with 'day_of_week' (0-6) instead of 'day_of_month' (1-31). Shift times, types, and overrides preserved correctly. Generation summary shows weekly pattern distribution as expected."
+
   - task: "Roster Template System - Save Current Roster as Template"
     implemented: true
     working: true
