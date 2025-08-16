@@ -1528,7 +1528,7 @@ class ShiftRosterAPITester:
 
 def main():
     print("🚀 Starting Shift Roster & Pay Calculator API Tests")
-    print("🎯 FOCUS: Testing Shift Type Classification Fix for SCHADS Award Compliance")
+    print("🎯 FOCUS: Testing Roster Template System for Saving and Loading Monthly Patterns")
     print("=" * 80)
     
     tester = ShiftRosterAPITester()
@@ -1541,9 +1541,10 @@ def main():
         tester.test_get_settings,
     ]
     
-    # Run SHIFT TYPE CLASSIFICATION tests (PRIORITY)
-    classification_tests = [
-        tester.test_shift_type_classification_fix,
+    # Run ROSTER TEMPLATE SYSTEM tests (PRIORITY)
+    template_tests = [
+        tester.test_roster_template_system,
+        tester.test_roster_template_edge_cases,
     ]
     
     # Run other tests
@@ -1562,15 +1563,15 @@ def main():
         except Exception as e:
             print(f"❌ Test failed with exception: {str(e)}")
     
-    print("\n🎯 Running SHIFT TYPE CLASSIFICATION Tests (PRIORITY)...")
-    classification_results = []
-    for test in classification_tests:
+    print("\n🎯 Running ROSTER TEMPLATE SYSTEM Tests (PRIORITY)...")
+    template_results = []
+    for test in template_tests:
         try:
             result = test()
-            classification_results.append(result)
+            template_results.append(result)
         except Exception as e:
-            print(f"❌ Classification test failed with exception: {str(e)}")
-            classification_results.append(False)
+            print(f"❌ Template test failed with exception: {str(e)}")
+            template_results.append(False)
     
     print("\n🔧 Running Other Tests...")
     for test in other_tests:
@@ -1583,23 +1584,25 @@ def main():
     print("\n" + "=" * 80)
     print(f"📊 Final Results: {tester.tests_passed}/{tester.tests_run} tests passed")
     
-    # Special focus on shift type classification results
-    classification_passed = sum(classification_results)
-    classification_total = len(classification_results)
+    # Special focus on roster template system results
+    template_passed = sum(template_results)
+    template_total = len(template_results)
     
-    print(f"🎯 SHIFT TYPE CLASSIFICATION Results: {classification_passed}/{classification_total} tests passed")
+    print(f"🎯 ROSTER TEMPLATE SYSTEM Results: {template_passed}/{template_total} tests passed")
     
-    if classification_passed == classification_total:
-        print("✅ SHIFT TYPE CLASSIFICATION FIX VERIFIED!")
-        print("   - 15:30-23:30 shifts correctly classified as EVENING")
-        print("   - Shifts ending at or before 20:00 are DAY shifts")
-        print("   - Shifts extending past 20:00 are EVENING shifts")
-        print("   - SCHADS Award compliance verified")
+    if template_passed == template_total:
+        print("✅ ROSTER TEMPLATE SYSTEM VERIFIED!")
+        print("   - Save current roster as template: WORKING")
+        print("   - Get all templates: WORKING")
+        print("   - Generate roster from template: WORKING")
+        print("   - Get specific template: WORKING")
+        print("   - Delete template: WORKING")
+        print("   - Edge cases handled correctly: WORKING")
     else:
-        print("❌ SHIFT TYPE CLASSIFICATION ISSUES DETECTED!")
-        print("   - 15:30-23:30 shifts may not be classified correctly")
-        print("   - Check SCHADS Award compliance logic")
-        print("   - Verify 20:00 cutoff time implementation")
+        print("❌ ROSTER TEMPLATE SYSTEM ISSUES DETECTED!")
+        print("   - Some template functionality may not be working correctly")
+        print("   - Check template save/load logic")
+        print("   - Verify template generation preserves patterns")
     
     if tester.tests_passed == tester.tests_run:
         print("🎉 All tests passed!")
