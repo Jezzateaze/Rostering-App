@@ -101,7 +101,7 @@ class Settings(BaseModel):
 
 # Pay calculation functions
 def determine_shift_type(date_str: str, start_time: str, end_time: str, is_public_holiday: bool) -> ShiftType:
-    """Determine the shift type based on date and time - SIMPLIFIED LOGIC"""
+    """Determine the shift type based on date and time - SCHADS Award compliant logic"""
     
     if is_public_holiday:
         return ShiftType.PUBLIC_HOLIDAY
@@ -129,14 +129,15 @@ def determine_shift_type(date_str: str, start_time: str, end_time: str, is_publi
     if end_minutes <= start_minutes:
         end_minutes += 24 * 60
     
-    # Simple time-based classification for weekdays
+    # SCHADS Award compliant classification for weekdays:
+    # If shift extends past 20:00 (8:00 PM), entire shift is classified as evening
     # Night: starts before 6am OR ends after midnight
     if start_hour < 6 or end_minutes > 24 * 60:
         return ShiftType.WEEKDAY_NIGHT
-    # Evening: starts at 8pm or later OR extends past 8pm
-    elif start_hour >= 20 or end_minutes > 20 * 60:
+    # Evening: starts at 8pm or later OR extends past 20:00 (20:01 onwards means evening rate for whole shift)
+    elif start_hour >= 20 or end_minutes > (20 * 60):  # 20 * 60 = 1200 minutes = 20:00
         return ShiftType.WEEKDAY_EVENING
-    # Day: everything else (6am-8pm range)
+    # Day: everything else (6am-8pm range, ends at or before 20:00)
     else:
         return ShiftType.WEEKDAY_DAY
 
