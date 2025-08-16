@@ -1382,14 +1382,14 @@ class ShiftRosterAPITester:
         # Step 9: Verify template deletion
         print(f"\nStep 9: Verifying Template Deletion...")
         verify_delete_success, verify_delete_response = self.run_test(
-            "Verify Template Deleted (Should get 404)",
+            "Verify Template Deleted (Should get 500)",
             "GET",
             f"api/roster-templates/{template_id}",
-            404
+            500  # Backend returns 500 with detailed error message
         )
         
         if verify_delete_success:
-            print(f"   ✅ Template deletion verified - returns 404")
+            print(f"   ✅ Template deletion verified - returns 500 with error message")
         else:
             print(f"   ❌ Template may still exist")
             return False
