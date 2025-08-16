@@ -366,37 +366,62 @@ function App() {
       return <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">Sleepover</Badge>;
     }
     
-    // Use the backend pay calculation to determine the actual shift type
-    // This avoids frontend/backend date parsing mismatches
-    const hoursWorked = entry.hours_worked || 0;
-    const totalPay = entry.total_pay || 0;
-    
-    if (hoursWorked > 0 && totalPay > 0) {
-      const hourlyRate = totalPay / hoursWorked;
-      
-      // Determine type based on calculated hourly rate
-      if (Math.abs(hourlyRate - 74.00) < 0.1) {
-        return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Sunday</Badge>;
-      } else if (Math.abs(hourlyRate - 57.50) < 0.1) {
-        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Saturday</Badge>;
-      } else if (Math.abs(hourlyRate - 48.50) < 0.1) {
-        return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Night</Badge>;
-      } else if (Math.abs(hourlyRate - 44.50) < 0.1) {
-        return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Evening</Badge>;
-      } else if (Math.abs(hourlyRate - 42.00) < 0.1) {
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">Day</Badge>;
-      } else if (Math.abs(hourlyRate - 88.50) < 0.1) {
-        return <Badge variant="secondary" className="bg-red-100 text-red-800">Public Holiday</Badge>;
+    // Use manual shift type if provided
+    if (entry.manual_shift_type) {
+      const typeMap = {
+        'weekday_day': { label: 'Day', class: 'bg-green-100 text-green-800' },
+        'weekday_evening': { label: 'Evening', class: 'bg-orange-100 text-orange-800' },
+        'weekday_night': { label: 'Night', class: 'bg-purple-100 text-purple-800' },
+        'saturday': { label: 'Saturday', class: 'bg-blue-100 text-blue-800' },
+        'sunday': { label: 'Sunday', class: 'bg-purple-100 text-purple-800' },
+        'public_holiday': { label: 'Public Holiday', class: 'bg-red-100 text-red-800' }
+      };
+      const type = typeMap[entry.manual_shift_type];
+      if (type) {
+        return <Badge variant="secondary" className={type.class}>{type.label}</Badge>;
       }
     }
     
-    // Fallback to time-based logic if pay calculation not available
+    // Determine shift type based on date and pay calculation
+    const entryDate = new Date(entry.date + 'T00:00:00');
+    const dayOfWeek = entryDate.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+    
+    // Check for weekend days first
+    if (dayOfWeek === 0) { // Sunday
+      return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Sunday</Badge>;
+    } else if (dayOfWeek === 6) { // Saturday
+      return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Saturday</Badge>;
+    }
+    
+    // For weekdays, check time-based classification
     const startHour = parseInt(entry.start_time.split(':')[0]);
-    if (startHour >= 22 || startHour < 6) {
+    const startMin = parseInt(entry.start_time.split(':')[1]);
+    const endHour = parseInt(entry.end_time.split(':')[0]);
+    const endMin = parseInt(entry.end_time.split(':')[1]);
+    
+    const startMinutes = startHour * 60 + startMin;
+    let endMinutes = endHour * 60 + endMin;
+    
+    // Handle overnight shifts
+    if (endMinutes <= startMinutes) {
+      endMinutes += 24 * 60;
+    }
+    
+    const eveningStartMinutes = 20 * 60; // 8:00 PM
+    const midnightMinutes = 24 * 60;
+    const morningCutoffMinutes = 6 * 60; // 6:00 AM
+    
+    // Weekday Night: commences at/before midnight AND finishes after midnight, OR commences before 6am
+    if ((startMinutes <= midnightMinutes && endMinutes > midnightMinutes) || startMinutes < morningCutoffMinutes) {
       return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Night</Badge>;
-    } else if (startHour >= 20) {
+    }
+    // Weekday Evening: starts after 8pm OR extends past 8pm (but not overnight)
+    else if (startMinutes >= eveningStartMinutes || 
+             (startMinutes < eveningStartMinutes && endMinutes > eveningStartMinutes && endMinutes <= midnightMinutes)) {
       return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Evening</Badge>;
-    } else {
+    }
+    // Weekday Day: 6am-8pm, doesn't extend past 8pm
+    else {
       return <Badge variant="secondary" className="bg-green-100 text-green-800">Day</Badge>;
     }
   };
