@@ -188,7 +188,7 @@ class ShiftTemplateEditTester:
         success, roster_response = self.run_test(
             f"Get Roster for Individual Shift Editing",
             "GET",
-            "api/roster",
+            f"api/roster?month={current_month}",
             200
         )
         
