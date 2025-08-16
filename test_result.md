@@ -411,6 +411,10 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Day-of-Week Template System - Save Template with Day-of-Week Pattern"
+    - "Day-of-Week Template System - Generate Roster Using Day-of-Week Template"
+    - "Day-of-Week Template System - Cross-Month Pattern Verification"
+    - "Day-of-Week Template System - Template Data Structure Verification"
     - "Roster Template System - Save Current Roster as Template"
     - "Roster Template System - Get All Templates"
     - "Roster Template System - Generate Roster from Template"
