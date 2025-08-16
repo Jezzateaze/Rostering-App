@@ -156,9 +156,19 @@ def calculate_hours_worked(start_time: str, end_time: str) -> float:
     return total_minutes / 60.0
 
 def calculate_pay(roster_entry: RosterEntry, settings: Settings) -> RosterEntry:
-    """Calculate pay for a roster entry with sleepover logic"""
+    """Calculate pay for a roster entry with sleepover logic and Queensland public holiday detection"""
     hours = calculate_hours_worked(roster_entry.start_time, roster_entry.end_time)
     roster_entry.hours_worked = hours
+    
+    # Check if this date is a Queensland public holiday (unless manually overridden)
+    if not roster_entry.manual_shift_type and not roster_entry.is_public_holiday:
+        try:
+            date_obj = datetime.strptime(roster_entry.date, "%Y-%m-%d").date()
+            # Default to QLD for now - could be enhanced with staff location data
+            roster_entry.is_public_holiday = holiday_service.is_public_holiday(date_obj, "QLD")
+        except Exception as e:
+            print(f"Error checking public holiday for {roster_entry.date}: {e}")
+            roster_entry.is_public_holiday = False
     
     # Determine if this is a sleepover shift
     is_sleepover = roster_entry.manual_sleepover if roster_entry.manual_sleepover is not None else roster_entry.is_sleepover
@@ -241,9 +251,9 @@ def calculate_pay(roster_entry: RosterEntry, settings: Settings) -> RosterEntry:
                     roster_entry.is_public_holiday
                 )
             
-            # Get hourly rate based on shift type
+            # Get hourly rate based on shift type - Queensland public holiday integration
             if shift_type == ShiftType.PUBLIC_HOLIDAY:
-                hourly_rate = settings.rates["public_holiday"]
+                hourly_rate = settings.rates["public_holiday"]  # $88.50/hr for QLD public holidays
             elif shift_type == ShiftType.SATURDAY:
                 hourly_rate = settings.rates["saturday"]
             elif shift_type == ShiftType.SUNDAY:
