@@ -579,20 +579,45 @@ function App() {
 
         {/* Shift Assignment Dialog */}
         <Dialog open={showShiftDialog} onOpenChange={setShowShiftDialog}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Assign Shift</DialogTitle>
+              <DialogTitle>Edit Shift</DialogTitle>
             </DialogHeader>
             {selectedShift && (
               <div className="space-y-4">
-                <div>
-                  <Label>Shift Time</Label>
-                  <div className="text-lg font-medium">
-                    {selectedShift.start_time} - {selectedShift.end_time}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="start-time">Start Time</Label>
+                    <Input
+                      id="start-time"
+                      type="time"
+                      value={selectedShift.start_time}
+                      onChange={(e) => {
+                        setSelectedShift({
+                          ...selectedShift,
+                          start_time: e.target.value
+                        });
+                      }}
+                    />
                   </div>
-                  <div className="text-sm text-slate-600">
-                    {new Date(selectedShift.date).toLocaleDateString()}
+                  <div>
+                    <Label htmlFor="end-time">End Time</Label>
+                    <Input
+                      id="end-time"
+                      type="time"
+                      value={selectedShift.end_time}
+                      onChange={(e) => {
+                        setSelectedShift({
+                          ...selectedShift,
+                          end_time: e.target.value
+                        });
+                      }}
+                    />
                   </div>
+                </div>
+                
+                <div className="text-sm text-slate-600">
+                  Date: {new Date(selectedShift.date).toLocaleDateString()}
                 </div>
                 
                 <div>
@@ -601,18 +626,19 @@ function App() {
                     value={selectedShift.staff_id || "unassigned"}
                     onValueChange={(staffId) => {
                       if (staffId === "unassigned") {
-                        updateRosterEntry(selectedShift.id, {
+                        setSelectedShift({
+                          ...selectedShift,
                           staff_id: null,
                           staff_name: null
                         });
                       } else {
                         const staff_member = staff.find(s => s.id === staffId);
-                        updateRosterEntry(selectedShift.id, {
+                        setSelectedShift({
+                          ...selectedShift,
                           staff_id: staffId,
                           staff_name: staff_member ? staff_member.name : null
                         });
                       }
-                      setShowShiftDialog(false);
                     }}
                   >
                     <SelectTrigger>
@@ -649,6 +675,25 @@ function App() {
                     <span>Total Pay:</span>
                     <span className="text-emerald-600">{formatCurrency(selectedShift.total_pay)}</span>
                   </div>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setShowShiftDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={() => {
+                    // Update both staff assignment and shift times
+                    const updates = {
+                      staff_id: selectedShift.staff_id,
+                      staff_name: selectedShift.staff_name,
+                      start_time: selectedShift.start_time,
+                      end_time: selectedShift.end_time
+                    };
+                    updateRosterEntry(selectedShift.id, updates);
+                    setShowShiftDialog(false);
+                  }}>
+                    Save Changes
+                  </Button>
                 </div>
               </div>
             )}
