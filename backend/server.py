@@ -120,9 +120,9 @@ def determine_shift_type(date_str: str, start_time: str, end_time: str, is_publi
             (start_minutes < midnight_minutes and end_minutes > midnight_minutes)):
             return ShiftType.WEEKDAY_NIGHT
         
-        # Weekday Evening: starts after 8pm OR shift extends past 8pm (includes ending AT 8pm)
+        # Weekday Evening: starts after 8pm OR shift extends PAST 8pm (not AT 8pm)
         elif (start_minutes >= evening_start_minutes or 
-              (start_minutes < evening_start_minutes and end_minutes >= evening_start_minutes)):
+              (start_minutes < evening_start_minutes and end_minutes > evening_start_minutes)):
             return ShiftType.WEEKDAY_EVENING
         
         # Weekday Day: starts at/after 6am and ends at/before 8pm
