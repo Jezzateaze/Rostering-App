@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the newly implemented roster template system for saving and loading monthly roster patterns"
+user_problem_statement: "Test the updated roster template system with day-of-week pattern logic for cross-month application"
 
 backend:
   - task: "Roster Template System - Save Current Roster as Template"
