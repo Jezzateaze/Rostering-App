@@ -132,10 +132,16 @@ function App() {
     }
   };
 
-  const generateMonthlyRoster = async () => {
+  const generateMonthlyRoster = async (templateId = null) => {
     try {
       const monthString = currentDate.toISOString().slice(0, 7);
-      await axios.post(`${API_BASE_URL}/api/generate-roster/${monthString}`);
+      
+      let url = `${API_BASE_URL}/api/generate-roster/${monthString}`;
+      if (templateId) {
+        url += `?template_id=${templateId}`;
+      }
+      
+      await axios.post(url);
       
       // Also generate roster for previous month dates if they appear in the first week
       const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -144,23 +150,88 @@ function App() {
       
       if (startOfWeek.getMonth() !== firstDay.getMonth()) {
         const prevMonthString = startOfWeek.toISOString().slice(0, 7);
-        await axios.post(`${API_BASE_URL}/api/generate-roster/${prevMonthString}`);
+        let prevUrl = `${API_BASE_URL}/api/generate-roster/${prevMonthString}`;
+        if (templateId) {
+          prevUrl += `?template_id=${templateId}`;
+        }
+        await axios.post(prevUrl);
       }
       
       // Also generate for next month dates if they appear in the last week
       const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
       const endOfWeek = new Date(lastDay);
-      endOfWeek.setDate(endOfWeek.getDate() + (7 - lastDay.getDay()) % 7);
+      endOfWeek.setDate(endOfWeek.getDate() + (6 - lastDay.getDay()));
       
       if (endOfWeek.getMonth() !== lastDay.getMonth()) {
         const nextMonthString = endOfWeek.toISOString().slice(0, 7);
-        await axios.post(`${API_BASE_URL}/api/generate-roster/${nextMonthString}`);
+        let nextUrl = `${API_BASE_URL}/api/generate-roster/${nextMonthString}`;
+        if (templateId) {
+          nextUrl += `?template_id=${templateId}`;
+        }
+        await axios.post(nextUrl);
       }
-      
-      fetchRosterData();
+
+      await fetchRosterData();
     } catch (error) {
       console.error('Error generating roster:', error);
     }
+  };
+
+  const saveCurrentRosterAsTemplate = async () => {
+    try {
+      if (!newTemplateName.trim()) {
+        alert('Please enter a template name');
+        return;
+      }
+
+      const monthString = currentDate.toISOString().slice(0, 7);
+      
+      await axios.post(`${API_BASE_URL}/api/roster-templates`, null, {
+        params: {
+          name: newTemplateName,
+          description: templateDescription || `Template saved from ${monthString}`,
+          month: monthString
+        }
+      });
+
+      // Reset form and close dialog
+      setNewTemplateName('');
+      setTemplateDescription('');
+      setShowSaveTemplateDialog(false);
+      
+      // Refresh templates
+      await fetchRosterTemplates();
+      
+      alert('Roster template saved successfully!');
+    } catch (error) {
+      console.error('Error saving roster template:', error);
+      alert('Failed to save roster template. Please try again.');
+    }
+  };
+
+  const deleteRosterTemplate = async (templateId) => {
+    if (!confirm('Are you sure you want to delete this template?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_BASE_URL}/api/roster-templates/${templateId}`);
+      await fetchRosterTemplates();
+      alert('Template deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      alert('Failed to delete template. Please try again.');
+    }
+  };
+
+  const handleGenerateRoster = () => {
+    setShowGenerateRosterDialog(true);
+  };
+
+  const executeGenerateRoster = async () => {
+    await generateMonthlyRoster(selectedRosterTemplate);
+    setShowGenerateRosterDialog(false);
+    setSelectedRosterTemplate(null);
   };
 
   const updateRosterEntry = async (entryId, updates) => {
