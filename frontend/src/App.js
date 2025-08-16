@@ -292,12 +292,44 @@ function App() {
       return <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">Sleepover</Badge>;
     }
     
+    // Parse date to check day of week
+    const entryDate = new Date(entry.date);
+    const dayOfWeek = entryDate.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+    
+    // Check for weekend days
+    if (dayOfWeek === 0) { // Sunday
+      return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Sunday</Badge>;
+    } else if (dayOfWeek === 6) { // Saturday
+      return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Saturday</Badge>;
+    }
+    
+    // Weekday logic following SCHADS Award rules
     const startHour = parseInt(entry.start_time.split(':')[0]);
-    if (startHour >= 22 || startHour < 6) {
+    const startMin = parseInt(entry.start_time.split(':')[1]);
+    const endHour = parseInt(entry.end_time.split(':')[0]);
+    const endMin = parseInt(entry.end_time.split(':')[1]);
+    
+    const startMinutes = startHour * 60 + startMin;
+    let endMinutes = endHour * 60 + endMin;
+    
+    // Handle overnight shifts
+    if (endMinutes <= startMinutes) {
+      endMinutes += 24 * 60;
+    }
+    
+    const eveningStartMinutes = 20 * 60; // 8:00 PM
+    
+    // SCHADS Rule: Night shifts (starts before 6am OR crosses midnight)
+    if (startHour >= 22 || startHour < 6 || (startMinutes < 24 * 60 && endMinutes > 24 * 60)) {
       return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Night</Badge>;
-    } else if (startHour >= 20) {
+    }
+    // SCHADS Rule: Evening shifts (starts after 8pm OR extends past 8pm)
+    else if (startMinutes >= eveningStartMinutes || 
+             (startMinutes < eveningStartMinutes && endMinutes >= eveningStartMinutes)) {
       return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Evening</Badge>;
-    } else {
+    }
+    // Day shifts (6am-8pm, doesn't extend past 8pm)
+    else {
       return <Badge variant="secondary" className="bg-green-100 text-green-800">Day</Badge>;
     }
   };
