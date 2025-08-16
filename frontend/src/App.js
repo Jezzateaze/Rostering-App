@@ -326,10 +326,14 @@ function App() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="roster" className="flex items-center space-x-2">
               <CalendarIcon className="w-4 h-4" />
               <span>Roster</span>
+            </TabsTrigger>
+            <TabsTrigger value="shifts" className="flex items-center space-x-2">
+              <Clock className="w-4 h-4" />
+              <span>Shift Times</span>
             </TabsTrigger>
             <TabsTrigger value="staff" className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
