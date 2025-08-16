@@ -82,8 +82,34 @@ function App() {
   const fetchRosterData = async () => {
     try {
       const monthString = currentDate.toISOString().slice(0, 7); // YYYY-MM
-      const response = await axios.get(`${API_BASE_URL}/api/roster?month=${monthString}`);
-      setRosterEntries(response.data);
+      
+      // Get the first day of the current month to check if we need previous month data
+      const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const startOfWeek = new Date(firstDay);
+      startOfWeek.setDate(startOfWeek.getDate() - (firstDay.getDay() + 6) % 7); // Start from Monday
+      
+      // If the first Monday of the week is from the previous month, fetch that data too
+      const requests = [axios.get(`${API_BASE_URL}/api/roster?month=${monthString}`)];
+      
+      if (startOfWeek.getMonth() !== firstDay.getMonth()) {
+        const prevMonthString = startOfWeek.toISOString().slice(0, 7);
+        requests.push(axios.get(`${API_BASE_URL}/api/roster?month=${prevMonthString}`));
+      }
+      
+      // Also check if we need next month data for the last week
+      const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+      const endOfWeek = new Date(lastDay);
+      endOfWeek.setDate(endOfWeek.getDate() + (7 - lastDay.getDay()) % 7); // End of Sunday
+      
+      if (endOfWeek.getMonth() !== lastDay.getMonth()) {
+        const nextMonthString = endOfWeek.toISOString().slice(0, 7);
+        requests.push(axios.get(`${API_BASE_URL}/api/roster?month=${nextMonthString}`));
+      }
+      
+      const responses = await Promise.all(requests);
+      const allEntries = responses.flatMap(response => response.data);
+      
+      setRosterEntries(allEntries);
     } catch (error) {
       console.error('Error fetching roster data:', error);
     }
