@@ -70,6 +70,15 @@ function App() {
     }
   }, [currentDate]);
 
+  const fetchRosterTemplates = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/roster-templates`);
+      setRosterTemplates(response.data);
+    } catch (error) {
+      console.error('Error fetching roster templates:', error);
+    }
+  };
+
   const fetchInitialData = async () => {
     try {
       const [staffRes, templatesRes, settingsRes] = await Promise.all([
