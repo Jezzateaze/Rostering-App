@@ -244,14 +244,14 @@ class ShiftRosterAPITester:
                 "expected_shift_type": "EVENING"
             },
             {
-                "name": "20:00-06:00 (should be EVENING or NIGHT - starts at 20:00)",
+                "name": "20:00-06:00 (should be NIGHT - overnight shift)",
                 "date": "2025-01-06",  # Monday
                 "start_time": "20:00",
                 "end_time": "06:00",
                 "expected_hours": 10.0,
-                "expected_rate": 44.50,  # Evening rate (starts at 20:00)
-                "expected_pay": 445.00,  # 10 * 44.50
-                "expected_shift_type": "EVENING"
+                "expected_rate": 48.50,  # Night rate (overnight shift)
+                "expected_pay": 485.00,  # 10 * 48.50
+                "expected_shift_type": "NIGHT"
             }
         ]
         
