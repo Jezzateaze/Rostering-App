@@ -398,13 +398,16 @@ function App() {
 
   const deleteShift = async (shiftId) => {
     try {
-      const confirmDelete = window.confirm('Are you sure you want to delete this shift?');
+      const confirmDelete = window.confirm('Are you sure you want to delete this shift? This cannot be undone.');
       if (confirmDelete) {
-        await axios.delete(`${API_BASE_URL}/api/roster/${shiftId}`);
+        console.log('Deleting shift:', shiftId);
+        const response = await axios.delete(`${API_BASE_URL}/api/roster/${shiftId}`);
+        console.log('Delete shift response:', response.data);
         fetchRosterData();
       }
     } catch (error) {
       console.error('Error deleting shift:', error);
+      alert(`Error deleting shift: ${error.response?.data?.message || error.message}`);
     }
   };
 
