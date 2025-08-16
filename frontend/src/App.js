@@ -283,6 +283,12 @@ function App() {
     setShowShiftDialog(false);
   };
 
+  const denyShiftAssignment = () => {
+    setShowBreakWarning(false);
+    setBreakWarningData(null);
+    // Keep the shift dialog open for user to select different staff
+  };
+
   const clearMonthlyRoster = async () => {
     try {
       const monthString = currentDate.toISOString().slice(0, 7);
