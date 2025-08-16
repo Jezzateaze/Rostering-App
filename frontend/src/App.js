@@ -780,17 +780,60 @@ function App() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Hours:</span>
-                    <span className="font-medium">{selectedShift.hours_worked.toFixed(1)}</span>
+                <Separator />
+
+                <div className="space-y-3">
+                  <h4 className="font-medium text-slate-700">Pay Calculation</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Hours Worked</Label>
+                      <div className="text-lg font-medium">{selectedShift.hours_worked.toFixed(1)}</div>
+                    </div>
+                    <div>
+                      <Label>Shift Type</Label>
+                      {getShiftTypeBadge(selectedShift)}
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Base Pay:</span>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="manual-base-pay">Base Pay Override</Label>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm">$</span>
+                        <Input
+                          id="manual-base-pay"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Auto-calculated"
+                          onChange={(e) => {
+                            const manualPay = parseFloat(e.target.value) || null;
+                            setSelectedShift({
+                              ...selectedShift,
+                              manual_base_pay: manualPay,
+                              total_pay: (manualPay || selectedShift.base_pay) + selectedShift.sleepover_allowance
+                            });
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">Leave empty for auto-calculation</p>
+                    </div>
+                    <div>
+                      <Label>Sleepover Allowance</Label>
+                      <div className="text-lg font-medium">
+                        {selectedShift.sleepover_allowance > 0 ? formatCurrency(selectedShift.sleepover_allowance) : '-'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 bg-slate-50 p-3 rounded-lg">
+                  <div className="flex justify-between text-sm">
+                    <span>Calculated Base Pay:</span>
                     <span className="font-medium">{formatCurrency(selectedShift.base_pay)}</span>
                   </div>
                   {selectedShift.sleepover_allowance > 0 && (
-                    <div className="flex justify-between">
+                    <div className="flex justify-between text-sm">
                       <span>Sleepover Allowance:</span>
                       <span className="font-medium">{formatCurrency(selectedShift.sleepover_allowance)}</span>
                     </div>
