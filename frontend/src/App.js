@@ -1767,6 +1767,146 @@ function App() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Generate Roster Dialog with Template Selection */}
+        <Dialog open={showGenerateRosterDialog} onOpenChange={setShowGenerateRosterDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Generate Monthly Roster</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Choose Template</Label>
+                <Select value={selectedRosterTemplate || "default"} onValueChange={setSelectedRosterTemplate}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Default Template (Shift Templates)</SelectItem>
+                    {rosterTemplates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name} ({template.shift_count} shifts)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-500 mt-1">
+                  Default uses your configured shift templates. Saved templates use exact shift patterns.
+                </p>
+              </div>
+
+              {selectedRosterTemplate && selectedRosterTemplate !== "default" && (
+                <div className="bg-blue-50 p-3 rounded">
+                  <h4 className="font-medium text-sm mb-1">Template Preview</h4>
+                  {(() => {
+                    const template = rosterTemplates.find(t => t.id === selectedRosterTemplate);
+                    return template ? (
+                      <div className="text-xs text-slate-600">
+                        <p><strong>{template.name}</strong></p>
+                        <p>{template.description}</p>
+                        <p>{template.shift_count} shifts configured</p>
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+              )}
+
+              <div className="flex space-x-2">
+                <Button variant="outline" onClick={() => setShowGenerateRosterDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={executeGenerateRoster}>
+                  Generate Roster
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Save Template Dialog */}
+        <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Save Current Roster as Template</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">
+                Save the current month's roster pattern as a reusable template. Staff assignments will not be saved - only shift times and configurations.
+              </p>
+              
+              <div>
+                <Label htmlFor="template-name">Template Name</Label>
+                <Input
+                  id="template-name"
+                  placeholder="e.g., Standard Monthly Pattern"
+                  value={newTemplateName}
+                  onChange={(e) => setNewTemplateName(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="template-description">Description (Optional)</Label>
+                <Input
+                  id="template-description"
+                  placeholder="Brief description of this template..."
+                  value={templateDescription}
+                  onChange={(e) => setTemplateDescription(e.target.value)}
+                />
+              </div>
+
+              <div className="bg-amber-50 p-3 rounded">
+                <p className="text-xs text-amber-700">
+                  <strong>Note:</strong> This will save all shifts from the current month ({currentDate.toISOString().slice(0, 7)}) as a template pattern.
+                </p>
+              </div>
+
+              <div className="flex space-x-2">
+                <Button variant="outline" onClick={() => setShowSaveTemplateDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={saveCurrentRosterAsTemplate}>
+                  Save Template
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Manage Templates Dialog (accessible from Settings) */}
+        {activeTab === 'settings' && (
+          <div className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Roster Templates</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {rosterTemplates.length === 0 ? (
+                    <p className="text-sm text-slate-500">No saved templates yet. Save your current roster as a template to get started.</p>
+                  ) : (
+                    rosterTemplates.map((template) => (
+                      <div key={template.id} className="flex items-center justify-between p-3 border rounded">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{template.name}</h4>
+                          <p className="text-sm text-slate-600">{template.description}</p>
+                          <p className="text-xs text-slate-500">{template.shift_count} shifts · Created {new Date(template.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteRosterTemplate(template.id)}
+                          className="text-red-600 border-red-300 hover:bg-red-50"
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
