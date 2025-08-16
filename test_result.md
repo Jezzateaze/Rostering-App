@@ -101,3 +101,83 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "User reports that Clear Roster button and red X delete shift functionality are not working despite previous fixes"
+
+backend:
+  - task: "Clear Monthly Roster API"
+    implemented: true
+    working: "unknown"
+    file: "server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "API endpoint exists at /api/roster/month/{month}, needs testing"
+
+  - task: "Delete Individual Shift API" 
+    implemented: true
+    working: "unknown"
+    file: "server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "API endpoint exists at /api/roster/{entry_id}, needs testing"
+
+frontend:
+  - task: "Clear Roster Button"
+    implemented: true
+    working: false
+    file: "App.js"
+    stuck_count: 2
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user" 
+        comment: "User reports Clear Roster button is not working"
+      - working: false
+        agent: "main"
+        comment: "Function clearMonthlyRoster exists at line 340-359, calls DELETE API"
+
+  - task: "Delete Shift Red X Button"
+    implemented: true
+    working: false
+    file: "App.js"
+    stuck_count: 2
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "User reports red X delete buttons are not working"
+      - working: false
+        agent: "main"
+        comment: "Function deleteShift exists at line 402-414, red X button at line 567-580"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Clear Monthly Roster API"
+    - "Delete Individual Shift API"
+    - "Clear Roster Button"
+    - "Delete Shift Red X Button"
+  stuck_tasks:
+    - "Clear Roster Button"
+    - "Delete Shift Red X Button"
+  test_all: false
+  test_priority: "stuck_first"
+
+agent_communication:
+  - agent: "main"
+    message: "User reports delete functionalities not working. Need to test backend APIs first, then debug frontend event handling and styling issues."
