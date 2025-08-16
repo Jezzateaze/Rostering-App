@@ -510,13 +510,20 @@ function App() {
                 <div>
                   <Label htmlFor="staff-select">Assign Staff</Label>
                   <Select
-                    value={selectedShift.staff_id || ''}
+                    value={selectedShift.staff_id || "unassigned"}
                     onValueChange={(staffId) => {
-                      const staff_member = staff.find(s => s.id === staffId);
-                      updateRosterEntry(selectedShift.id, {
-                        staff_id: staffId,
-                        staff_name: staff_member ? staff_member.name : null
-                      });
+                      if (staffId === "unassigned") {
+                        updateRosterEntry(selectedShift.id, {
+                          staff_id: null,
+                          staff_name: null
+                        });
+                      } else {
+                        const staff_member = staff.find(s => s.id === staffId);
+                        updateRosterEntry(selectedShift.id, {
+                          staff_id: staffId,
+                          staff_name: staff_member ? staff_member.name : null
+                        });
+                      }
                       setShowShiftDialog(false);
                     }}
                   >
@@ -524,7 +531,7 @@ function App() {
                       <SelectValue placeholder="Select staff member" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {staff.map(member => (
                         <SelectItem key={member.id} value={member.id}>
                           {member.name}
