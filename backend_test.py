@@ -1898,8 +1898,9 @@ def main():
         tester.test_get_settings,
     ]
     
-    # Run ROSTER TEMPLATE SYSTEM tests (PRIORITY)
+    # Run DAY-OF-WEEK TEMPLATE SYSTEM tests (PRIORITY)
     template_tests = [
+        tester.test_day_of_week_template_system,
         tester.test_roster_template_system,
         tester.test_roster_template_edge_cases,
     ]
