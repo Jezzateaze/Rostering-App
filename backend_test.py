@@ -380,14 +380,14 @@ class ShiftRosterAPITester:
                 "shift_type": "EVENING"
             },
             {
-                "name": "15:00-20:00 shift (extends past 8pm) - CRITICAL TEST",
+                "name": "15:00-20:00 shift (ends exactly at 8pm) - CONTROL TEST",
                 "date": "2025-01-06",  # Monday
                 "start_time": "15:00",
                 "end_time": "20:00",
                 "expected_hours": 5.0,
-                "expected_rate": 44.50,  # Evening rate
-                "expected_pay": 222.50,  # 5 * 44.50
-                "shift_type": "EVENING"
+                "expected_rate": 42.00,  # Day rate (ends exactly at 20:00)
+                "expected_pay": 210.00,  # 5 * 42.00
+                "shift_type": "DAY"
             },
             {
                 "name": "20:30-23:30 shift (starts after 8pm) - CRITICAL TEST",
