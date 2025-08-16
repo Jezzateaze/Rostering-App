@@ -366,50 +366,37 @@ function App() {
       return <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">Sleepover</Badge>;
     }
     
-    // Parse date to check day of week - match backend Python weekday() logic
-    const entryDate = new Date(entry.date + 'T00:00:00'); // Ensure consistent parsing
-    const dayOfWeek = entryDate.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+    // Use the backend pay calculation to determine the actual shift type
+    // This avoids frontend/backend date parsing mismatches
+    const hoursWorked = entry.hours_worked || 0;
+    const totalPay = entry.total_pay || 0;
     
-    // Convert JavaScript day (0=Sunday) to Python weekday equivalent for consistent logic
-    // Python: 0=Monday, 1=Tuesday, ..., 5=Saturday, 6=Sunday
-    let pythonWeekday;
-    if (dayOfWeek === 0) pythonWeekday = 6; // Sunday
-    else pythonWeekday = dayOfWeek - 1; // Monday=0, Tuesday=1, ..., Saturday=5
-    
-    // Check for weekend days using Python weekday logic
-    if (pythonWeekday === 6) { // Sunday (Python weekday 6)
-      return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Sunday</Badge>;
-    } else if (pythonWeekday === 5) { // Saturday (Python weekday 5)
-      return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Saturday</Badge>;
+    if (hoursWorked > 0 && totalPay > 0) {
+      const hourlyRate = totalPay / hoursWorked;
+      
+      // Determine type based on calculated hourly rate
+      if (Math.abs(hourlyRate - 74.00) < 0.1) {
+        return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Sunday</Badge>;
+      } else if (Math.abs(hourlyRate - 57.50) < 0.1) {
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Saturday</Badge>;
+      } else if (Math.abs(hourlyRate - 48.50) < 0.1) {
+        return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Night</Badge>;
+      } else if (Math.abs(hourlyRate - 44.50) < 0.1) {
+        return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Evening</Badge>;
+      } else if (Math.abs(hourlyRate - 42.00) < 0.1) {
+        return <Badge variant="secondary" className="bg-green-100 text-green-800">Day</Badge>;
+      } else if (Math.abs(hourlyRate - 88.50) < 0.1) {
+        return <Badge variant="secondary" className="bg-red-100 text-red-800">Public Holiday</Badge>;
+      }
     }
     
-    // For weekdays (Monday=0 to Friday=4), determine shift type
+    // Fallback to time-based logic if pay calculation not available
     const startHour = parseInt(entry.start_time.split(':')[0]);
-    const startMin = parseInt(entry.start_time.split(':')[1]);
-    const endHour = parseInt(entry.end_time.split(':')[0]);
-    const endMin = parseInt(entry.end_time.split(':')[1]);
-    
-    const startMinutes = startHour * 60 + startMin;
-    let endMinutes = endHour * 60 + endMin;
-    
-    // Handle overnight shifts
-    if (endMinutes <= startMinutes) {
-      endMinutes += 24 * 60;
-    }
-    
-    const eveningStartMinutes = 20 * 60; // 8:00 PM
-    
-    // SCHADS Rule: Night shifts (starts before 6am OR crosses midnight)
-    if (startHour >= 22 || startHour < 6 || (startMinutes < 24 * 60 && endMinutes > 24 * 60)) {
+    if (startHour >= 22 || startHour < 6) {
       return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Night</Badge>;
-    }
-    // SCHADS Rule: Evening shifts (starts after 8pm OR extends PAST 8pm, not AT 8pm)
-    else if (startMinutes >= eveningStartMinutes || 
-             (startMinutes < eveningStartMinutes && endMinutes > eveningStartMinutes)) {
+    } else if (startHour >= 20) {
       return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Evening</Badge>;
-    }
-    // Day shifts (6am-8pm, doesn't extend past 8pm)
-    else {
+    } else {
       return <Badge variant="secondary" className="bg-green-100 text-green-800">Day</Badge>;
     }
   };
