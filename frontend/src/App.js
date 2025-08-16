@@ -604,9 +604,27 @@ function App() {
                       Next Month
                     </Button>
                   </div>
-                  <Button onClick={generateMonthlyRoster}>
-                    Generate Roster
-                  </Button>
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        setNewShift({
+                          ...newShift,
+                          date: currentDate.toISOString().split('T')[0]
+                        });
+                        setShowAddShiftDialog(true);
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Shift
+                    </Button>
+                    <Button variant="outline" onClick={clearMonthlyRoster}>
+                      Clear Roster
+                    </Button>
+                    <Button onClick={generateMonthlyRoster}>
+                      Generate Roster
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
