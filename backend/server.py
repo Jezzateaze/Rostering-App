@@ -746,6 +746,207 @@ async def get_holidays_in_range(
 
 # ====== END EXPORT/HOLIDAY ENDPOINTS ======
 
+# ====== ROSTER TEMPLATE ENDPOINTS ======
+
+@app.get("/api/roster-templates")
+def get_roster_templates():
+    """Get all saved roster templates"""
+    try:
+        templates = list(db.roster_templates.find())
+        
+        # Convert ObjectId to string and format dates
+        for template in templates:
+            template["_id"] = str(template["_id"])
+            if template.get("created_at"):
+                template["created_at"] = template["created_at"].isoformat()
+        
+        return templates
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get roster templates: {str(e)}")
+
+@app.post("/api/roster-templates")
+def save_roster_template(
+    name: str,
+    description: str = None,
+    month: str = None  # YYYY-MM format for the month to save as template
+):
+    """Save current roster as a template"""
+    try:
+        if not month:
+            raise HTTPException(status_code=400, detail="Month is required (YYYY-MM format)")
+        
+        # Get all roster entries for the specified month
+        year, month_num = month.split("-")
+        roster_entries = list(db.roster.find({
+            "date": {"$regex": f"^{year}-{month_num.zfill(2)}"}
+        }))
+        
+        if not roster_entries:
+            raise HTTPException(status_code=404, detail="No roster entries found for the specified month")
+        
+        # Extract shift patterns without staff assignments
+        template_shifts = []
+        for entry in roster_entries:
+            # Parse the date to get day of month
+            entry_date = datetime.strptime(entry["date"], "%Y-%m-%d")
+            day_of_month = entry_date.day
+            
+            shift_config = {
+                "day_of_month": day_of_month,
+                "start_time": entry["start_time"],
+                "end_time": entry["end_time"],
+                "is_sleepover": entry.get("is_sleepover", False),
+                "manual_shift_type": entry.get("manual_shift_type"),
+                "manual_hourly_rate": entry.get("manual_hourly_rate"),
+                "manual_sleepover": entry.get("manual_sleepover"),
+                "wake_hours": entry.get("wake_hours")
+            }
+            template_shifts.append(shift_config)
+        
+        # Create template document
+        template_id = str(uuid.uuid4())
+        template = {
+            "id": template_id,
+            "name": name,
+            "description": description or f"Template saved from {month}",
+            "shifts": template_shifts,
+            "created_at": datetime.now(),
+            "shift_count": len(template_shifts)
+        }
+        
+        # Save to database
+        db.roster_templates.insert_one(template)
+        
+        return {
+            "message": "Roster template saved successfully",
+            "template_id": template_id,
+            "name": name,
+            "shift_count": len(template_shifts)
+        }
+        
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid month format. Use YYYY-MM")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save roster template: {str(e)}")
+
+@app.post("/api/generate-roster-from-template/{template_id}/{month}")
+def generate_roster_from_template(template_id: str, month: str):
+    """Generate roster for a month using a saved template"""
+    try:
+        # Get the template
+        template = db.roster_templates.find_one({"id": template_id})
+        if not template:
+            raise HTTPException(status_code=404, detail="Roster template not found")
+        
+        # Parse target month
+        try:
+            year, month_num = month.split("-")
+            target_year = int(year)
+            target_month = int(month_num)
+        except (ValueError, IndexError):
+            raise HTTPException(status_code=400, detail="Invalid month format. Use YYYY-MM")
+        
+        # Clear existing roster for the target month
+        db.roster.delete_many({
+            "date": {"$regex": f"^{year}-{month_num.zfill(2)}"}
+        })
+        
+        # Get settings for pay calculation
+        settings_doc = db.settings.find_one()
+        settings = Settings(**settings_doc) if settings_doc else Settings()
+        
+        # Generate roster entries from template
+        generated_entries = []
+        
+        # Get the number of days in the target month
+        import calendar
+        days_in_month = calendar.monthrange(target_year, target_month)[1]
+        
+        for shift in template["shifts"]:
+            day_of_month = shift["day_of_month"]
+            
+            # Skip if day doesn't exist in target month (e.g., Feb 31st)
+            if day_of_month > days_in_month:
+                continue
+            
+            # Create the date for the target month
+            target_date = f"{year}-{month_num.zfill(2)}-{str(day_of_month).zfill(2)}"
+            
+            # Create roster entry
+            entry_id = str(uuid.uuid4())
+            roster_entry = RosterEntry(
+                id=entry_id,
+                date=target_date,
+                shift_template_id=f"template-{template_id}",
+                staff_id=None,  # No staff assigned
+                staff_name=None,
+                start_time=shift["start_time"],
+                end_time=shift["end_time"],
+                is_sleepover=shift.get("is_sleepover", False),
+                is_public_holiday=False,  # Will be auto-detected
+                manual_shift_type=shift.get("manual_shift_type"),
+                manual_hourly_rate=shift.get("manual_hourly_rate"),
+                manual_sleepover=shift.get("manual_sleepover"),
+                wake_hours=shift.get("wake_hours"),
+                hours_worked=0.0,
+                base_pay=0.0,
+                sleepover_allowance=0.0,
+                total_pay=0.0
+            )
+            
+            # Calculate pay and hours
+            roster_entry = calculate_pay(roster_entry, settings)
+            
+            # Save to database
+            db.roster.insert_one(roster_entry.dict())
+            generated_entries.append(roster_entry.dict())
+        
+        return {
+            "message": f"Roster generated successfully for {month} using template '{template['name']}'",
+            "template_name": template["name"],
+            "month": month,
+            "entries_generated": len(generated_entries),
+            "entries": generated_entries
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate roster from template: {str(e)}")
+
+@app.delete("/api/roster-templates/{template_id}")
+def delete_roster_template(template_id: str):
+    """Delete a saved roster template"""
+    try:
+        result = db.roster_templates.delete_one({"id": template_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Roster template not found")
+        
+        return {"message": "Roster template deleted successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete roster template: {str(e)}")
+
+@app.get("/api/roster-templates/{template_id}")
+def get_roster_template(template_id: str):
+    """Get a specific roster template by ID"""
+    try:
+        template = db.roster_templates.find_one({"id": template_id})
+        
+        if not template:
+            raise HTTPException(status_code=404, detail="Roster template not found")
+        
+        # Convert ObjectId to string and format dates
+        template["_id"] = str(template["_id"])
+        if template.get("created_at"):
+            template["created_at"] = template["created_at"].isoformat()
+        
+        return template
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get roster template: {str(e)}")
+
+# ====== END ROSTER TEMPLATE ENDPOINTS ======
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
