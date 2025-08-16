@@ -67,6 +67,23 @@ class ShiftTemplate(BaseModel):
     is_sleepover: bool = False
     day_of_week: int  # 0=Monday, 6=Sunday
 
+class RosterTemplate(BaseModel):
+    id: str
+    name: str
+    description: Optional[str] = None
+    shifts: List[Dict[str, Any]]  # List of shift configurations for the month
+    created_at: datetime = None
+    
+class RosterTemplateShift(BaseModel):
+    day_of_month: int  # 1-31
+    start_time: str
+    end_time: str
+    is_sleepover: bool = False
+    manual_shift_type: Optional[str] = None
+    manual_hourly_rate: Optional[float] = None
+    manual_sleepover: Optional[bool] = None
+    wake_hours: Optional[float] = None
+
 class RosterEntry(BaseModel):
     id: str
     date: str  # YYYY-MM-DD
