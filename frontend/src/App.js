@@ -229,7 +229,8 @@ function App() {
   };
 
   const executeGenerateRoster = async () => {
-    await generateMonthlyRoster(selectedRosterTemplate);
+    const templateId = selectedRosterTemplate === "default" ? null : selectedRosterTemplate;
+    await generateMonthlyRoster(templateId);
     setShowGenerateRosterDialog(false);
     setSelectedRosterTemplate(null);
   };
