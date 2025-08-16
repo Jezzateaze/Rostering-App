@@ -145,20 +145,125 @@ function App() {
     }
   };
 
-  const updateShiftTime = async (entryId, newStartTime, newEndTime) => {
-    try {
-      const entry = rosterEntries.find(e => e.id === entryId);
-      const updatedEntry = { 
-        ...entry, 
-        start_time: newStartTime, 
-        end_time: newEndTime 
-      };
-      
-      await axios.put(`${API_BASE_URL}/api/roster/${entryId}`, updatedEntry);
-      fetchRosterData();
-    } catch (error) {
-      console.error('Error updating shift time:', error);
+  const checkShiftBreakViolation = (staffId, staffName, newShift) => {
+    if (!staffId || !staffName) return null;
+
+    // Get all shifts for this staff member in the current month
+    const staffShifts = rosterEntries.filter(entry => 
+      entry.staff_id === staffId && entry.id !== newShift.id
+    );
+
+    // Add the new shift to check against
+    const allShifts = [...staffShifts, newShift].sort((a, b) => 
+      new Date(a.date + 'T' + a.start_time) - new Date(b.date + 'T' + b.start_time)
+    );
+
+    for (let i = 0; i < allShifts.length - 1; i++) {
+      const currentShift = allShifts[i];
+      const nextShift = allShifts[i + 1];
+
+      // Skip if either shift is the new one we're checking
+      if (currentShift.id === newShift.id || nextShift.id === newShift.id) {
+        // Calculate time between shifts
+        const currentEndTime = new Date(currentShift.date + 'T' + currentShift.end_time);
+        const nextStartTime = new Date(nextShift.date + 'T' + nextShift.start_time);
+        
+        // Handle overnight shifts
+        if (currentShift.end_time < currentShift.start_time) {
+          currentEndTime.setDate(currentEndTime.getDate() + 1);
+        }
+        if (nextShift.start_time < '12:00' && nextShift.end_time > nextShift.start_time) {
+          // Normal day shift starting early
+        }
+
+        const timeDiffHours = (nextStartTime - currentEndTime) / (1000 * 60 * 60);
+
+        // Check for violations (less than 10 hours break)
+        if (timeDiffHours < 10 && timeDiffHours >= 0) {
+          // Check exceptions: sleepover to regular or regular to sleepover
+          const currentIsSleepover = currentShift.is_sleepover;
+          const nextIsSleepover = nextShift.is_sleepover;
+          
+          // Allow if going from sleepover to regular or regular to sleepover
+          if (currentIsSleepover || nextIsSleepover) {
+            continue;
+          }
+
+          // Violation found
+          return {
+            violation: true,
+            staffName,
+            currentShift,
+            nextShift,
+            timeBetween: timeDiffHours.toFixed(1),
+            message: `${staffName} has only ${timeDiffHours.toFixed(1)} hours break between shifts. Minimum 10 hours required.`,
+            details: `${currentShift.date} ${currentShift.start_time}-${currentShift.end_time} → ${nextShift.date} ${nextShift.start_time}-${nextShift.end_time}`
+          };
+        }
+      }
     }
+
+    return null;
+  };
+
+  const handleStaffAssignmentWithBreakCheck = (staffId, staffName, shift) => {
+    if (!staffId || staffId === "unassigned") {
+      // Just unassign
+      const updates = {
+        staff_id: null,
+        staff_name: null,
+        start_time: shift.start_time,
+        end_time: shift.end_time
+      };
+      updateRosterEntry(shift.id, updates);
+      setShowShiftDialog(false);
+      return;
+    }
+
+    // Check for break violations
+    const violation = checkShiftBreakViolation(staffId, staffName, shift);
+    
+    if (violation) {
+      // Show warning dialog
+      setBreakWarningData({
+        staffId,
+        staffName,
+        shift,
+        violation
+      });
+      setShowBreakWarning(true);
+    } else {
+      // No violation, proceed with assignment
+      const updates = {
+        staff_id: staffId,
+        staff_name: staffName,
+        start_time: shift.start_time,
+        end_time: shift.end_time
+      };
+      updateRosterEntry(shift.id, updates);
+      setShowShiftDialog(false);
+    }
+  };
+
+  const approveShiftAssignment = () => {
+    if (breakWarningData) {
+      const updates = {
+        staff_id: breakWarningData.staffId,
+        staff_name: breakWarningData.staffName,
+        start_time: breakWarningData.shift.start_time,
+        end_time: breakWarningData.shift.end_time
+      };
+      updateRosterEntry(breakWarningData.shift.id, updates);
+    }
+    setShowBreakWarning(false);
+    setBreakWarningData(null);
+    setShowShiftDialog(false);
+  };
+
+  const denyShiftAssignment = () => {
+    setShowBreakWarning(false);
+    setBreakWarningData(null);
+    // Keep the shift dialog open for user to select different staff
   };
 
   const getDayEntries = (date) => {
