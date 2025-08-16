@@ -1921,7 +1921,7 @@ def main():
         except Exception as e:
             print(f"❌ Test failed with exception: {str(e)}")
     
-    print("\n🎯 Running ROSTER TEMPLATE SYSTEM Tests (PRIORITY)...")
+    print("\n🎯 Running DAY-OF-WEEK TEMPLATE SYSTEM Tests (PRIORITY)...")
     template_results = []
     for test in template_tests:
         try:
