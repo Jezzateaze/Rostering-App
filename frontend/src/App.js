@@ -451,25 +451,39 @@ function App() {
           {dayEntries.map(entry => (
             <div
               key={entry.id}
-              className="text-xs p-1 rounded cursor-pointer hover:bg-slate-100 transition-colors group"
-              onClick={() => {
-                setSelectedShift(entry);
-                setShowShiftDialog(true);
-              }}
+              className="text-xs p-1 rounded cursor-pointer hover:bg-slate-100 transition-colors group relative"
             >
-              <div className="font-medium flex items-center justify-between">
-                <span>{entry.start_time}-{entry.end_time}</span>
-                <Edit className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div 
+                className="flex-1"
+                onClick={() => {
+                  setSelectedShift(entry);
+                  setShowShiftDialog(true);
+                }}
+              >
+                <div className="font-medium flex items-center justify-between">
+                  <span>{entry.start_time}-{entry.end_time}</span>
+                  <Edit className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <div className="text-slate-600">
+                  {entry.staff_name || 'Unassigned'}
+                </div>
+                <div className="flex items-center justify-between">
+                  {getShiftTypeBadge(entry)}
+                  <span className="font-medium text-emerald-600">
+                    {formatCurrency(entry.total_pay)}
+                  </span>
+                </div>
               </div>
-              <div className="text-slate-600">
-                {entry.staff_name || 'Unassigned'}
-              </div>
-              <div className="flex items-center justify-between">
-                {getShiftTypeBadge(entry)}
-                <span className="font-medium text-emerald-600">
-                  {formatCurrency(entry.total_pay)}
-                </span>
-              </div>
+              <button
+                className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteShift(entry.id);
+                }}
+                title="Delete shift"
+              >
+                ×
+              </button>
             </div>
           ))}
         </div>
