@@ -4,7 +4,7 @@ Handles PDF, Excel, and CSV export functionality
 """
 
 from typing import List, Optional, Dict, Any
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from motor.motor_asyncio import AsyncIOMotorDatabase
 import pandas as pd
 import io
