@@ -998,6 +998,64 @@ function App() {
           </DialogContent>
         </Dialog>
 
+        {/* Add Shift Dialog */}
+        <Dialog open={showAddShiftDialog} onOpenChange={setShowAddShiftDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add New Shift</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="shift-date">Date</Label>
+                <Input
+                  id="shift-date"
+                  type="date"
+                  value={newShift.date}
+                  onChange={(e) => setNewShift({...newShift, date: e.target.value})}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="shift-start">Start Time</Label>
+                  <Input
+                    id="shift-start"
+                    type="time"
+                    value={newShift.start_time}
+                    onChange={(e) => setNewShift({...newShift, start_time: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="shift-end">End Time</Label>
+                  <Input
+                    id="shift-end"
+                    type="time"
+                    value={newShift.end_time}
+                    onChange={(e) => setNewShift({...newShift, end_time: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={newShift.is_sleepover}
+                  onCheckedChange={(checked) => setNewShift({...newShift, is_sleepover: checked})}
+                />
+                <Label>Sleepover Shift</Label>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowAddShiftDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={addIndividualShift}>
+                  Add Shift
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Break Warning Dialog */}
         <Dialog open={showBreakWarning} onOpenChange={setShowBreakWarning}>
           <DialogContent className="max-w-lg">
