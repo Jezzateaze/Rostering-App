@@ -477,14 +477,37 @@ function App() {
     const dayEntries = getDayEntries(date);
     const dayTotal = dayEntries.reduce((sum, entry) => sum + entry.total_pay, 0);
     
+    // Check if this date is from a different month (previous or next)
+    const isCurrentMonth = date.getMonth() === currentDate.getMonth();
+    const isPreviousMonth = date < new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const isNextMonth = date > new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    
+    // Style classes for different month dates
+    const backgroundClass = isCurrentMonth 
+      ? 'bg-white' 
+      : isPreviousMonth 
+        ? 'bg-slate-100' 
+        : 'bg-slate-50';
+    
+    const textClass = isCurrentMonth 
+      ? 'text-slate-900' 
+      : 'text-slate-500';
+    
     return (
-      <div className="min-h-[120px] p-1 border-r border-b border-slate-200">
-        <div className="font-medium text-sm mb-2">{date.getDate()}</div>
+      <div className={`min-h-[120px] p-1 border-r border-b border-slate-200 ${backgroundClass}`}>
+        <div className={`font-medium text-sm mb-2 flex items-center justify-between ${textClass}`}>
+          <span>{date.getDate()}</span>
+          {!isCurrentMonth && (
+            <span className="text-xs text-slate-400">
+              {isPreviousMonth ? 'Prev' : 'Next'}
+            </span>
+          )}
+        </div>
         <div className="space-y-1">
           {dayEntries.map(entry => (
             <div
               key={entry.id}
-              className="text-xs p-1 rounded cursor-pointer hover:bg-slate-100 transition-colors group relative"
+              className="text-xs p-1 rounded cursor-pointer hover:bg-slate-200 transition-colors group relative"
             >
               <div 
                 className="flex-1"
@@ -494,15 +517,19 @@ function App() {
                 }}
               >
                 <div className="font-medium flex items-center justify-between">
-                  <span>{entry.start_time}-{entry.end_time}</span>
+                  <span className={isCurrentMonth ? '' : 'opacity-75'}>
+                    {entry.start_time}-{entry.end_time}
+                  </span>
                   <Edit className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <div className="text-slate-600">
+                <div className={`text-slate-600 ${isCurrentMonth ? '' : 'opacity-75'}`}>
                   {entry.staff_name || 'Unassigned'}
                 </div>
                 <div className="flex items-center justify-between">
-                  {getShiftTypeBadge(entry)}
-                  <span className="font-medium text-emerald-600">
+                  <div className={isCurrentMonth ? '' : 'opacity-75'}>
+                    {getShiftTypeBadge(entry)}
+                  </div>
+                  <span className={`font-medium text-emerald-600 ${isCurrentMonth ? '' : 'opacity-75'}`}>
                     {formatCurrency(entry.total_pay)}
                   </span>
                 </div>
@@ -521,8 +548,13 @@ function App() {
           ))}
         </div>
         {dayTotal > 0 && (
-          <div className="mt-2 pt-1 border-t border-slate-200 text-xs font-bold text-emerald-700">
+          <div className={`mt-2 pt-1 border-t border-slate-200 text-xs font-bold text-emerald-700 ${isCurrentMonth ? '' : 'opacity-75'}`}>
             Total: {formatCurrency(dayTotal)}
+          </div>
+        )}
+        {!isCurrentMonth && dayEntries.length === 0 && (
+          <div className="text-xs text-slate-400 italic mt-2">
+            {isPreviousMonth ? 'Previous month' : 'Next month'}
           </div>
         )}
       </div>
