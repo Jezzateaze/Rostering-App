@@ -13,6 +13,7 @@ import { Switch } from './components/ui/switch';
 import { Separator } from './components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table';
 import { Users, Calendar as CalendarIcon, Settings, DollarSign, Clock, Download, Plus, Edit } from 'lucide-react';
+import ExportManager from './components/ExportManager';
 import './App.css';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
