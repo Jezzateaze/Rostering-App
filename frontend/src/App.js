@@ -806,6 +806,71 @@ function App() {
           </DialogContent>
         </Dialog>
 
+        {/* Break Warning Dialog */}
+        <Dialog open={showBreakWarning} onOpenChange={setShowBreakWarning}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2 text-amber-600">
+                <Clock className="w-5 h-5" />
+                <span>Shift Break Warning</span>
+              </DialogTitle>
+            </DialogHeader>
+            {breakWarningData && (
+              <div className="space-y-4">
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+                        <Clock className="w-4 h-4 text-amber-600" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-amber-800 mb-1">
+                        Insufficient Break Time
+                      </h3>
+                      <p className="text-sm text-amber-700 mb-2">
+                        {breakWarningData.violation.message}
+                      </p>
+                      <div className="text-xs text-amber-600">
+                        <strong>Shift Sequence:</strong><br />
+                        {breakWarningData.violation.details}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-sm text-slate-600 space-y-2">
+                  <p><strong>Policy:</strong> Staff must have at least 10 hours break between shifts.</p>
+                  <p><strong>Exceptions:</strong> Sleepover shifts are exempt from this rule.</p>
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-lg">
+                  <p className="text-sm font-medium text-slate-700 mb-1">Do you want to proceed?</p>
+                  <p className="text-xs text-slate-600">
+                    Approving this assignment may violate workplace safety regulations.
+                  </p>
+                </div>
+
+                <div className="flex justify-end space-x-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={denyShiftAssignment}
+                    className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                  >
+                    Deny Assignment
+                  </Button>
+                  <Button 
+                    onClick={approveShiftAssignment}
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                  >
+                    Approve Override
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* Shift Template Edit Dialog */}
         <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
           <DialogContent className="max-w-md">
