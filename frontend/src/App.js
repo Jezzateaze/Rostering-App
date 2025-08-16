@@ -283,10 +283,60 @@ function App() {
     setShowShiftDialog(false);
   };
 
-  const denyShiftAssignment = () => {
-    setShowBreakWarning(false);
-    setBreakWarningData(null);
-    // Keep the shift dialog open for user to select different staff
+  const clearMonthlyRoster = async () => {
+    try {
+      const monthString = currentDate.toISOString().slice(0, 7);
+      const confirmClear = window.confirm(`Are you sure you want to clear all roster entries for ${monthString}? This cannot be undone.`);
+      
+      if (confirmClear) {
+        await axios.delete(`${API_BASE_URL}/api/roster/month/${monthString}`);
+        fetchRosterData();
+      }
+    } catch (error) {
+      console.error('Error clearing roster:', error);
+    }
+  };
+
+  const addIndividualShift = async () => {
+    if (!newShift.date || !newShift.start_time || !newShift.end_time) return;
+    
+    try {
+      const shiftData = {
+        ...newShift,
+        shift_template_id: `custom-${Date.now()}`,
+        staff_id: null,
+        staff_name: null,
+        is_public_holiday: false,
+        hours_worked: 0.0,
+        base_pay: 0.0,
+        sleepover_allowance: 0.0,
+        total_pay: 0.0
+      };
+      
+      await axios.post(`${API_BASE_URL}/api/roster/add-shift`, shiftData);
+      setNewShift({
+        date: '',
+        start_time: '09:00',
+        end_time: '17:00',
+        is_sleepover: false
+      });
+      setShowAddShiftDialog(false);
+      fetchRosterData();
+    } catch (error) {
+      console.error('Error adding shift:', error);
+    }
+  };
+
+  const deleteShift = async (shiftId) => {
+    try {
+      const confirmDelete = window.confirm('Are you sure you want to delete this shift?');
+      if (confirmDelete) {
+        await axios.delete(`${API_BASE_URL}/api/roster/${shiftId}`);
+        fetchRosterData();
+      }
+    } catch (error) {
+      console.error('Error deleting shift:', error);
+    }
   };
 
   const getDayEntries = (date) => {
