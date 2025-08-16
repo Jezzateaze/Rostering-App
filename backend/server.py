@@ -776,7 +776,7 @@ def save_roster_template(
     description: str = None,
     month: str = None  # YYYY-MM format for the month to save as template
 ):
-    """Save current roster as a template"""
+    """Save current roster as a template based on day-of-week patterns"""
     try:
         if not month:
             raise HTTPException(status_code=400, detail="Month is required (YYYY-MM format)")
@@ -790,15 +790,19 @@ def save_roster_template(
         if not roster_entries:
             raise HTTPException(status_code=404, detail="No roster entries found for the specified month")
         
-        # Extract shift patterns without staff assignments
-        template_shifts = []
+        # Group shifts by day of week instead of day of month
+        day_patterns = {}  # day_of_week -> list of shifts
+        
         for entry in roster_entries:
-            # Parse the date to get day of month
+            # Parse the date to get day of week
             entry_date = datetime.strptime(entry["date"], "%Y-%m-%d")
-            day_of_month = entry_date.day
+            day_of_week = entry_date.weekday()  # 0=Monday, 6=Sunday
+            
+            if day_of_week not in day_patterns:
+                day_patterns[day_of_week] = []
             
             shift_config = {
-                "day_of_month": day_of_month,
+                "day_of_week": day_of_week,
                 "start_time": entry["start_time"],
                 "end_time": entry["end_time"],
                 "is_sleepover": entry.get("is_sleepover", False),
@@ -807,27 +811,40 @@ def save_roster_template(
                 "manual_sleepover": entry.get("manual_sleepover"),
                 "wake_hours": entry.get("wake_hours")
             }
-            template_shifts.append(shift_config)
+            day_patterns[day_of_week].append(shift_config)
+        
+        # Convert to flat list for storage
+        template_shifts = []
+        for day_of_week, shifts in day_patterns.items():
+            template_shifts.extend(shifts)
         
         # Create template document
         template_id = str(uuid.uuid4())
         template = {
             "id": template_id,
             "name": name,
-            "description": description or f"Template saved from {month}",
+            "description": description or f"Template saved from {month} (day-of-week pattern)",
             "shifts": template_shifts,
             "created_at": datetime.now(),
-            "shift_count": len(template_shifts)
+            "shift_count": len(template_shifts),
+            "pattern_type": "day_of_week"  # Mark as day-of-week based template
         }
         
         # Save to database
         db.roster_templates.insert_one(template)
         
+        # Create summary of pattern
+        day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        pattern_summary = {}
+        for day_of_week, shifts in day_patterns.items():
+            pattern_summary[day_names[day_of_week]] = len(shifts)
+        
         return {
-            "message": "Roster template saved successfully",
+            "message": "Roster template saved successfully (day-of-week pattern)",
             "template_id": template_id,
             "name": name,
-            "shift_count": len(template_shifts)
+            "shift_count": len(template_shifts),
+            "pattern_summary": pattern_summary
         }
         
     except ValueError:
