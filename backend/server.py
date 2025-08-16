@@ -425,6 +425,27 @@ async def generate_monthly_roster(month: str):
     
     return {"message": f"Generated {entries_created} roster entries for {month}"}
 
+# Clear roster for a month
+@app.delete("/api/roster/month/{month}")
+async def clear_monthly_roster(month: str):
+    """Clear all roster entries for a specific month"""
+    result = db.roster.delete_many({"date": {"$regex": f"^{month}"}})
+    return {"message": f"Deleted {result.deleted_count} roster entries for {month}"}
+
+# Add individual shift to roster
+@app.post("/api/roster/add-shift")
+async def add_individual_shift(entry: RosterEntry):
+    """Add a single shift to the roster"""
+    # Get current settings for pay calculation
+    settings_doc = db.settings.find_one()
+    settings = Settings(**settings_doc) if settings_doc else Settings()
+    
+    entry.id = str(uuid.uuid4())
+    entry = calculate_pay(entry, settings)
+    
+    db.roster.insert_one(entry.dict())
+    return entry
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
