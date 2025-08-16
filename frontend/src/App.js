@@ -928,31 +928,7 @@ function App() {
           </TabsContent>
 
           <TabsContent value="export" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Download className="w-5 h-5" />
-                  <span>Export Options</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-slate-600">Export roster and pay data in various formats:</p>
-                <div className="flex space-x-4">
-                  <Button variant="outline">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export PDF
-                  </Button>
-                  <Button variant="outline">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export Excel
-                  </Button>
-                  <Button variant="outline">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export CSV
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <ExportManager baseUrl={API_BASE_URL} />
           </TabsContent>
         </Tabs>
 
