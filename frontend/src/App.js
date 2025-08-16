@@ -119,6 +119,18 @@ function App() {
     }
   };
 
+  const updateSettings = async (newSettings) => {
+    try {
+      await axios.put(`${API_BASE_URL}/api/settings`, newSettings);
+      setSettings(newSettings);
+      setShowSettingsDialog(false);
+      // Refresh roster to recalculate pay
+      fetchRosterData();
+    } catch (error) {
+      console.error('Error updating settings:', error);
+    }
+  };
+
   const updateShiftTemplate = async (templateId, updates) => {
     try {
       const template = shiftTemplates.find(t => t.id === templateId);
