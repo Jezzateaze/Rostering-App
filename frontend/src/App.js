@@ -340,18 +340,21 @@ function App() {
   const clearMonthlyRoster = async () => {
     try {
       const monthString = currentDate.toISOString().slice(0, 7);
-      const confirmClear = window.confirm(`Are you sure you want to clear all roster entries for ${currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}? This cannot be undone.`);
+      const monthName = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
       
-      if (confirmClear) {
+      // Use a more reliable confirmation method
+      if (window.confirm(`⚠️ CLEAR ENTIRE ROSTER\n\nAre you sure you want to delete ALL shifts for ${monthName}?\n\nThis action cannot be undone!`)) {
         console.log('Clearing roster for month:', monthString);
         const response = await axios.delete(`${API_BASE_URL}/api/roster/month/${monthString}`);
         console.log('Clear roster response:', response.data);
-        alert(`Successfully cleared roster for ${currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`);
+        
+        // Show success message
+        alert(`✅ Successfully cleared all shifts for ${monthName}\n\n${response.data.message}`);
         fetchRosterData();
       }
     } catch (error) {
       console.error('Error clearing roster:', error);
-      alert(`Error clearing roster: ${error.response?.data?.message || error.message}`);
+      alert(`❌ Error clearing roster: ${error.response?.data?.message || error.message}`);
     }
   };
 
@@ -398,8 +401,7 @@ function App() {
 
   const deleteShift = async (shiftId) => {
     try {
-      const confirmDelete = window.confirm('Are you sure you want to delete this shift? This cannot be undone.');
-      if (confirmDelete) {
+      if (window.confirm('🗑️ DELETE SHIFT\n\nAre you sure you want to delete this shift?\n\nThis action cannot be undone!')) {
         console.log('Deleting shift:', shiftId);
         const response = await axios.delete(`${API_BASE_URL}/api/roster/${shiftId}`);
         console.log('Delete shift response:', response.data);
@@ -407,7 +409,7 @@ function App() {
       }
     } catch (error) {
       console.error('Error deleting shift:', error);
-      alert(`Error deleting shift: ${error.response?.data?.message || error.message}`);
+      alert(`❌ Error deleting shift: ${error.response?.data?.message || error.message}`);
     }
   };
 
