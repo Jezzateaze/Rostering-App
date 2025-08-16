@@ -844,8 +844,11 @@ function App() {
                     <Button variant="outline" onClick={clearMonthlyRoster}>
                       Clear Roster
                     </Button>
-                    <Button onClick={generateMonthlyRoster}>
+                    <Button onClick={handleGenerateRoster}>
                       Generate Roster
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowSaveTemplateDialog(true)}>
+                      Save Template
                     </Button>
                   </div>
                 </div>
