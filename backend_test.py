@@ -693,16 +693,28 @@ class ShiftRosterAPITester:
 
 def main():
     print("🚀 Starting Shift Roster & Pay Calculator API Tests")
+    print("🎯 FOCUS: Testing Delete Functionality (User Reported Issues)")
     print("=" * 60)
     
     tester = ShiftRosterAPITester()
     
-    # Run all tests
-    tests = [
+    # Run basic setup tests first
+    basic_tests = [
         tester.test_health_check,
         tester.test_get_staff,
         tester.test_get_shift_templates,
         tester.test_get_settings,
+    ]
+    
+    # Run DELETE functionality tests (PRIORITY)
+    delete_tests = [
+        tester.test_delete_individual_shift,
+        tester.test_clear_monthly_roster,
+        tester.test_delete_functionality_comprehensive,
+    ]
+    
+    # Run other tests
+    other_tests = [
         tester.test_generate_roster,
         tester.test_get_roster,
         tester.analyze_existing_pay_calculations,
@@ -710,10 +722,25 @@ def main():
         tester.test_roster_assignment,
     ]
     
-    # Optional: Test staff creation (commented out to avoid cluttering DB)
-    # staff_id = tester.test_create_staff()
+    print("🔧 Running Basic Setup Tests...")
+    for test in basic_tests:
+        try:
+            test()
+        except Exception as e:
+            print(f"❌ Test failed with exception: {str(e)}")
     
-    for test in tests:
+    print("\n🎯 Running DELETE FUNCTIONALITY Tests (PRIORITY)...")
+    delete_results = []
+    for test in delete_tests:
+        try:
+            result = test()
+            delete_results.append(result)
+        except Exception as e:
+            print(f"❌ Delete test failed with exception: {str(e)}")
+            delete_results.append(False)
+    
+    print("\n🔧 Running Other Tests...")
+    for test in other_tests:
         try:
             test()
         except Exception as e:
@@ -722,6 +749,21 @@ def main():
     # Print final results
     print("\n" + "=" * 60)
     print(f"📊 Final Results: {tester.tests_passed}/{tester.tests_run} tests passed")
+    
+    # Special focus on delete functionality results
+    delete_passed = sum(delete_results)
+    delete_total = len(delete_results)
+    
+    print(f"🎯 DELETE FUNCTIONALITY Results: {delete_passed}/{delete_total} tests passed")
+    
+    if delete_passed == delete_total:
+        print("✅ ALL DELETE FUNCTIONALITY TESTS PASSED!")
+        print("   - Individual shift deletion working")
+        print("   - Monthly roster clearing working")
+        print("   - Comprehensive delete scenarios working")
+    else:
+        print("❌ DELETE FUNCTIONALITY ISSUES DETECTED!")
+        print("   This explains why user reports delete buttons not working")
     
     if tester.tests_passed == tester.tests_run:
         print("🎉 All tests passed!")
