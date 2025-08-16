@@ -39,6 +39,8 @@ function App() {
   const [showShiftDialog, setShowShiftDialog] = useState(false);
   const [showStaffDialog, setShowStaffDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [newStaffName, setNewStaffName] = useState('');
   const [activeTab, setActiveTab] = useState('roster');
 
