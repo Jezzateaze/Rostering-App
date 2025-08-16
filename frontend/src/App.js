@@ -1,52 +1,782 @@
-import { useEffect } from "react";
-import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Calendar } from './components/ui/calendar';
+import { Button } from './components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
+import { Input } from './components/ui/input';
+import { Label } from './components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './components/ui/dialog';
+import { Badge } from './components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { Switch } from './components/ui/switch';
+import { Separator } from './components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table';
+import { Users, Calendar as CalendarIcon, Settings, DollarSign, Clock, Download, Plus, Edit } from 'lucide-react';
+import './App.css';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
-const Home = () => {
-  const helloWorldApi = async () => {
+function App() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [staff, setStaff] = useState([]);
+  const [shiftTemplates, setShiftTemplates] = useState([]);
+  const [rosterEntries, setRosterEntries] = useState([]);
+  const [settings, setSettings] = useState({
+    pay_mode: 'default',
+    rates: {
+      weekday_day: 42.00,
+      weekday_evening: 44.50,
+      weekday_night: 48.50,
+      saturday: 57.50,
+      sunday: 74.00,
+      public_holiday: 88.50,
+      sleepover_default: 175.00,
+      sleepover_schads: 60.02
+    }
+  });
+  const [selectedShift, setSelectedShift] = useState(null);
+  const [showShiftDialog, setShowShiftDialog] = useState(false);
+  const [showStaffDialog, setShowStaffDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [newStaffName, setNewStaffName] = useState('');
+  const [activeTab, setActiveTab] = useState('roster');
+
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  useEffect(() => {
+    if (currentDate) {
+      fetchRosterData();
+    }
+  }, [currentDate]);
+
+  const fetchInitialData = async () => {
     try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
+      const [staffRes, templatesRes, settingsRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/api/staff`),
+        axios.get(`${API_BASE_URL}/api/shift-templates`),
+        axios.get(`${API_BASE_URL}/api/settings`)
+      ]);
+      
+      setStaff(staffRes.data);
+      setShiftTemplates(templatesRes.data);
+      setSettings(settingsRes.data);
+    } catch (error) {
+      console.error('Error fetching initial data:', error);
     }
   };
 
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
+  const fetchRosterData = async () => {
+    try {
+      const monthString = currentDate.toISOString().slice(0, 7); // YYYY-MM
+      const response = await axios.get(`${API_BASE_URL}/api/roster?month=${monthString}`);
+      setRosterEntries(response.data);
+    } catch (error) {
+      console.error('Error fetching roster data:', error);
+    }
+  };
+
+  const generateMonthlyRoster = async () => {
+    try {
+      const monthString = currentDate.toISOString().slice(0, 7);
+      await axios.post(`${API_BASE_URL}/api/generate-roster/${monthString}`);
+      fetchRosterData();
+    } catch (error) {
+      console.error('Error generating roster:', error);
+    }
+  };
+
+  const updateRosterEntry = async (entryId, updates) => {
+    try {
+      const entry = rosterEntries.find(e => e.id === entryId);
+      const updatedEntry = { ...entry, ...updates };
+      
+      await axios.put(`${API_BASE_URL}/api/roster/${entryId}`, updatedEntry);
+      fetchRosterData();
+    } catch (error) {
+      console.error('Error updating roster entry:', error);
+    }
+  };
+
+  const addStaff = async () => {
+    if (!newStaffName.trim()) return;
+    
+    try {
+      const newStaff = {
+        name: newStaffName,
+        active: true
+      };
+      await axios.post(`${API_BASE_URL}/api/staff`, newStaff);
+      setNewStaffName('');
+      setShowStaffDialog(false);
+      fetchInitialData();
+    } catch (error) {
+      console.error('Error adding staff:', error);
+    }
+  };
+
+  const updateSettings = async (newSettings) => {
+    try {
+      await axios.put(`${API_BASE_URL}/api/settings`, newSettings);
+      setSettings(newSettings);
+      setShowSettingsDialog(false);
+      // Refresh roster to recalculate pay
+      fetchRosterData();
+    } catch (error) {
+      console.error('Error updating settings:', error);
+    }
+  };
+
+  const getDayEntries = (date) => {
+    const dateString = date.toISOString().split('T')[0];
+    return rosterEntries.filter(entry => entry.date === dateString);
+  };
+
+  const getShiftTypeBadge = (entry) => {
+    if (entry.is_sleepover) {
+      return <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">Sleepover</Badge>;
+    }
+    
+    const startHour = parseInt(entry.start_time.split(':')[0]);
+    if (startHour >= 22 || startHour < 6) {
+      return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Night</Badge>;
+    } else if (startHour >= 20) {
+      return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Evening</Badge>;
+    } else {
+      return <Badge variant="secondary" className="bg-green-100 text-green-800">Day</Badge>;
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: 'AUD'
+    }).format(amount);
+  };
+
+  const getWeeklyTotals = () => {
+    const weekStart = new Date(currentDate);
+    weekStart.setDate(currentDate.getDate() - currentDate.getDay() + 1); // Monday
+    
+    const weekEntries = rosterEntries.filter(entry => {
+      const entryDate = new Date(entry.date);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      return entryDate >= weekStart && entryDate <= weekEnd;
+    });
+
+    const staffTotals = {};
+    let totalHours = 0;
+    let totalPay = 0;
+
+    weekEntries.forEach(entry => {
+      if (entry.staff_name) {
+        if (!staffTotals[entry.staff_name]) {
+          staffTotals[entry.staff_name] = { hours: 0, pay: 0 };
+        }
+        staffTotals[entry.staff_name].hours += entry.hours_worked;
+        staffTotals[entry.staff_name].pay += entry.total_pay;
+        totalHours += entry.hours_worked;
+        totalPay += entry.total_pay;
+      }
+    });
+
+    return { staffTotals, totalHours, totalPay };
+  };
+
+  const renderCalendarDay = (date) => {
+    const dayEntries = getDayEntries(date);
+    const dayTotal = dayEntries.reduce((sum, entry) => sum + entry.total_pay, 0);
+    
+    return (
+      <div className="min-h-[120px] p-1 border-r border-b border-slate-200">
+        <div className="font-medium text-sm mb-2">{date.getDate()}</div>
+        <div className="space-y-1">
+          {dayEntries.map(entry => (
+            <div
+              key={entry.id}
+              className="text-xs p-1 rounded cursor-pointer hover:bg-slate-100 transition-colors"
+              onClick={() => {
+                setSelectedShift(entry);
+                setShowShiftDialog(true);
+              }}
+            >
+              <div className="font-medium">
+                {entry.start_time}-{entry.end_time}
+              </div>
+              <div className="text-slate-600">
+                {entry.staff_name || 'Unassigned'}
+              </div>
+              <div className="flex items-center justify-between">
+                {getShiftTypeBadge(entry)}
+                <span className="font-medium text-emerald-600">
+                  {formatCurrency(entry.total_pay)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        {dayTotal > 0 && (
+          <div className="mt-2 pt-1 border-t border-slate-200 text-xs font-bold text-emerald-700">
+            Total: {formatCurrency(dayTotal)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderMonthlyCalendar = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - (firstDay.getDay() + 6) % 7); // Start from Monday
+
+    const weeks = [];
+    const currentWeekDate = new Date(startDate);
+
+    while (currentWeekDate <= lastDay || weeks.length === 0 || currentWeekDate.getMonth() === month) {
+      const week = [];
+      for (let i = 0; i < 7; i++) {
+        week.push(new Date(currentWeekDate));
+        currentWeekDate.setDate(currentWeekDate.getDate() + 1);
+      }
+      weeks.push(week);
+      if (currentWeekDate.getMonth() !== month && week[6].getMonth() !== month) break;
+    }
+
+    return (
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        <div className="grid grid-cols-7 bg-slate-50">
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+            <div key={day} className="p-3 text-center font-semibold text-slate-700 border-r border-slate-200 last:border-r-0">
+              {day}
+            </div>
+          ))}
+        </div>
+        {weeks.map((week, weekIndex) => (
+          <div key={weekIndex} className="grid grid-cols-7">
+            {week.map((date, dayIndex) => (
+              <div key={dayIndex} className={`${date.getMonth() !== month ? 'bg-slate-50 text-slate-400' : ''}`}>
+                {renderCalendarDay(date)}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const { staffTotals, totalHours, totalPay } = getWeeklyTotals();
 
   return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="container mx-auto p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-4xl font-bold text-slate-800 mb-2">Shift Roster & Pay Calculator</h1>
+            <p className="text-slate-600">Professional workforce management system</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Badge variant="outline" className="px-3 py-1">
+              {settings.pay_mode === 'default' ? 'Default Pay' : 'SCHADS Award'}
+            </Badge>
+            <Button
+              variant="outline"
+              onClick={() => setShowSettingsDialog(true)}
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </Button>
+          </div>
+        </div>
 
-function App() {
-  return (
-    <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="roster" className="flex items-center space-x-2">
+              <CalendarIcon className="w-4 h-4" />
+              <span>Roster</span>
+            </TabsTrigger>
+            <TabsTrigger value="staff" className="flex items-center space-x-2">
+              <Users className="w-4 h-4" />
+              <span>Staff</span>
+            </TabsTrigger>
+            <TabsTrigger value="pay" className="flex items-center space-x-2">
+              <DollarSign className="w-4 h-4" />
+              <span>Pay Summary</span>
+            </TabsTrigger>
+            <TabsTrigger value="export" className="flex items-center space-x-2">
+              <Download className="w-4 h-4" />
+              <span>Export</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="roster" className="space-y-6">
+            {/* Month Navigation */}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const newDate = new Date(currentDate);
+                        newDate.setMonth(newDate.getMonth() - 1);
+                        setCurrentDate(newDate);
+                      }}
+                    >
+                      Previous Month
+                    </Button>
+                    <h2 className="text-2xl font-bold text-slate-800">
+                      {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                    </h2>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const newDate = new Date(currentDate);
+                        newDate.setMonth(newDate.getMonth() + 1);
+                        setCurrentDate(newDate);
+                      }}
+                    >
+                      Next Month
+                    </Button>
+                  </div>
+                  <Button onClick={generateMonthlyRoster}>
+                    Generate Roster
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Calendar */}
+            {renderMonthlyCalendar()}
+          </TabsContent>
+
+          <TabsContent value="staff" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center space-x-2">
+                    <Users className="w-5 h-5" />
+                    <span>Staff Management</span>
+                  </CardTitle>
+                  <Button onClick={() => setShowStaffDialog(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Staff
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {staff.map(member => (
+                    <Card key={member.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">{member.name}</h3>
+                          <Badge variant={member.active ? "default" : "secondary"}>
+                            {member.active ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="pay" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Clock className="w-5 h-5" />
+                    <span>Total Hours</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-slate-800">{totalHours.toFixed(1)}</div>
+                  <p className="text-slate-600">This week</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <DollarSign className="w-5 h-5" />
+                    <span>Total Pay</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-emerald-600">{formatCurrency(totalPay)}</div>
+                  <p className="text-slate-600">This week</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Users className="w-5 h-5" />
+                    <span>Staff Count</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-slate-800">{staff.length}</div>
+                  <p className="text-slate-600">Active staff</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Weekly Staff Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Staff Member</TableHead>
+                      <TableHead>Hours Worked</TableHead>
+                      <TableHead>Gross Pay</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Object.entries(staffTotals).map(([name, totals]) => (
+                      <TableRow key={name}>
+                        <TableCell className="font-medium">{name}</TableCell>
+                        <TableCell>{totals.hours.toFixed(1)}</TableCell>
+                        <TableCell className="font-medium text-emerald-600">
+                          {formatCurrency(totals.pay)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="export" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Download className="w-5 h-5" />
+                  <span>Export Options</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-slate-600">Export roster and pay data in various formats:</p>
+                <div className="flex space-x-4">
+                  <Button variant="outline">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export PDF
+                  </Button>
+                  <Button variant="outline">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export Excel
+                  </Button>
+                  <Button variant="outline">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export CSV
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Shift Assignment Dialog */}
+        <Dialog open={showShiftDialog} onOpenChange={setShowShiftDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Assign Shift</DialogTitle>
+            </DialogHeader>
+            {selectedShift && (
+              <div className="space-y-4">
+                <div>
+                  <Label>Shift Time</Label>
+                  <div className="text-lg font-medium">
+                    {selectedShift.start_time} - {selectedShift.end_time}
+                  </div>
+                  <div className="text-sm text-slate-600">
+                    {new Date(selectedShift.date).toLocaleDateString()}
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="staff-select">Assign Staff</Label>
+                  <Select
+                    value={selectedShift.staff_id || ''}
+                    onValueChange={(staffId) => {
+                      const staff_member = staff.find(s => s.id === staffId);
+                      updateRosterEntry(selectedShift.id, {
+                        staff_id: staffId,
+                        staff_name: staff_member ? staff_member.name : null
+                      });
+                      setShowShiftDialog(false);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select staff member" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Unassigned</SelectItem>
+                      {staff.map(member => (
+                        <SelectItem key={member.id} value={member.id}>
+                          {member.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Hours:</span>
+                    <span className="font-medium">{selectedShift.hours_worked.toFixed(1)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Base Pay:</span>
+                    <span className="font-medium">{formatCurrency(selectedShift.base_pay)}</span>
+                  </div>
+                  {selectedShift.sleepover_allowance > 0 && (
+                    <div className="flex justify-between">
+                      <span>Sleepover Allowance:</span>
+                      <span className="font-medium">{formatCurrency(selectedShift.sleepover_allowance)}</span>
+                    </div>
+                  )}
+                  <Separator />
+                  <div className="flex justify-between font-bold">
+                    <span>Total Pay:</span>
+                    <span className="text-emerald-600">{formatCurrency(selectedShift.total_pay)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Staff Dialog */}
+        <Dialog open={showStaffDialog} onOpenChange={setShowStaffDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add New Staff Member</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="staff-name">Name</Label>
+                <Input
+                  id="staff-name"
+                  value={newStaffName}
+                  onChange={(e) => setNewStaffName(e.target.value)}
+                  placeholder="Enter staff name"
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowStaffDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={addStaff}>Add Staff</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Settings Dialog */}
+        <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Settings</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-base font-medium">Pay Mode</Label>
+                  <p className="text-sm text-slate-600">Switch between Default rates and SCHADS Award compliance</p>
+                </div>
+                <Switch
+                  checked={settings.pay_mode === 'schads'}
+                  onCheckedChange={(checked) => {
+                    const newSettings = {
+                      ...settings,
+                      pay_mode: checked ? 'schads' : 'default'
+                    };
+                    updateSettings(newSettings);
+                  }}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Pay Rates</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Weekday Day Rate</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={settings.rates.weekday_day}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...settings,
+                          rates: {
+                            ...settings.rates,
+                            weekday_day: parseFloat(e.target.value) || 0
+                          }
+                        };
+                        setSettings(newSettings);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label>Weekday Evening Rate</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={settings.rates.weekday_evening}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...settings,
+                          rates: {
+                            ...settings.rates,
+                            weekday_evening: parseFloat(e.target.value) || 0
+                          }
+                        };
+                        setSettings(newSettings);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label>Weekday Night Rate</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={settings.rates.weekday_night}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...settings,
+                          rates: {
+                            ...settings.rates,
+                            weekday_night: parseFloat(e.target.value) || 0
+                          }
+                        };
+                        setSettings(newSettings);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label>Saturday Rate</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={settings.rates.saturday}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...settings,
+                          rates: {
+                            ...settings.rates,
+                            saturday: parseFloat(e.target.value) || 0
+                          }
+                        };
+                        setSettings(newSettings);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label>Sunday Rate</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={settings.rates.sunday}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...settings,
+                          rates: {
+                            ...settings.rates,
+                            sunday: parseFloat(e.target.value) || 0
+                          }
+                        };
+                        setSettings(newSettings);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label>Public Holiday Rate</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={settings.rates.public_holiday}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...settings,
+                          rates: {
+                            ...settings.rates,
+                            public_holiday: parseFloat(e.target.value) || 0
+                          }
+                        };
+                        setSettings(newSettings);
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Sleepover Allowance (Default)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={settings.rates.sleepover_default}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...settings,
+                          rates: {
+                            ...settings.rates,
+                            sleepover_default: parseFloat(e.target.value) || 0
+                          }
+                        };
+                        setSettings(newSettings);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label>Sleepover Allowance (SCHADS)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={settings.rates.sleepover_schads}
+                      onChange={(e) => {
+                        const newSettings = {
+                          ...settings,
+                          rates: {
+                            ...settings.rates,
+                            sleepover_schads: parseFloat(e.target.value) || 0
+                          }
+                        };
+                        setSettings(newSettings);
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setShowSettingsDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => updateSettings(settings)}>
+                  Save Settings
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }

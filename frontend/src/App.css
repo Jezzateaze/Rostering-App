@@ -1,34 +1,257 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8fafc;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
 }
 
-.App-link {
-    color: #61dafb;
+.container {
+  max-width: 1400px;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Smooth transitions */
+.transition-colors {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.transition-all {
+  transition: all 0.2s ease;
+}
+
+/* Focus styles */
+.focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Button hover effects */
+.btn-hover {
+  transition: all 0.2s ease;
+}
+
+.btn-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Card animations */
+.card-hover {
+  transition: all 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Professional color scheme */
+.bg-primary {
+  background-color: #1e40af;
+}
+
+.bg-secondary {
+  background-color: #64748b;
+}
+
+.bg-success {
+  background-color: #059669;
+}
+
+.bg-warning {
+  background-color: #d97706;
+}
+
+.bg-danger {
+  background-color: #dc2626;
+}
+
+.text-primary {
+  color: #1e40af;
+}
+
+.text-secondary {
+  color: #64748b;
+}
+
+.text-success {
+  color: #059669;
+}
+
+.text-warning {
+  color: #d97706;
+}
+
+.text-danger {
+  color: #dc2626;
+}
+
+/* Calendar specific styles */
+.calendar-day {
+  min-height: 120px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.calendar-day:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.shift-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+}
+
+.shift-badge.day {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.shift-badge.evening {
+  background-color: #fed7aa;
+  color: #9a3412;
+}
+
+.shift-badge.night {
+  background-color: #e9d5ff;
+  color: #7c3aed;
+}
+
+.shift-badge.sleepover {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+/* Form improvements */
+.form-input {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-label {
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+/* Table improvements */
+.table-row {
+  transition: background-color 0.2s ease;
+}
+
+.table-row:hover {
+  background-color: #f8fafc;
+}
+
+/* Loading states */
+.loading-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .calendar-day {
+    min-height: 80px;
+  }
+  
+  .shift-badge {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.25rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-friendly {
+    background: white !important;
+    color: black !important;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .calendar-day {
+    border: 2px solid #000;
+  }
+  
+  .shift-badge {
+    border: 1px solid #000;
+  }
 }
