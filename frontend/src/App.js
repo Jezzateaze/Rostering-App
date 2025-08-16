@@ -363,7 +363,10 @@ function App() {
   };
 
   const getShiftTypeBadge = (entry) => {
-    if (entry.is_sleepover) {
+    // Check for manual or automatic sleepover status
+    const isSleepover = entry.manual_sleepover !== null ? entry.manual_sleepover : entry.is_sleepover;
+    
+    if (isSleepover) {
       return <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">Sleepover</Badge>;
     }
     
@@ -375,7 +378,8 @@ function App() {
         'weekday_night': { label: 'Night', class: 'bg-purple-100 text-purple-800' },
         'saturday': { label: 'Saturday', class: 'bg-blue-100 text-blue-800' },
         'sunday': { label: 'Sunday', class: 'bg-purple-100 text-purple-800' },
-        'public_holiday': { label: 'Public Holiday', class: 'bg-red-100 text-red-800' }
+        'public_holiday': { label: 'Public Holiday', class: 'bg-red-100 text-red-800' },
+        'sleepover': { label: 'Sleepover', class: 'bg-indigo-100 text-indigo-800' }
       };
       const type = typeMap[entry.manual_shift_type];
       return <Badge variant="secondary" className={type.class}>{type.label}</Badge>;
