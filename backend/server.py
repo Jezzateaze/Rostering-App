@@ -67,6 +67,8 @@ class RosterEntry(BaseModel):
     is_public_holiday: bool = False
     manual_shift_type: Optional[str] = None  # Manual override for shift type
     manual_hourly_rate: Optional[float] = None  # Manual override for hourly rate
+    manual_sleepover: Optional[bool] = None  # Manual override for sleepover status
+    wake_hours: Optional[float] = None  # Additional wake hours beyond 2 hours
     hours_worked: float = 0.0
     base_pay: float = 0.0
     sleepover_allowance: float = 0.0
