@@ -194,6 +194,174 @@ class ShiftRosterAPITester:
                 print(f"   Hours: {entry.get('hours_worked', 0)}, Pay: ${entry.get('total_pay', 0)}")
         return success
 
+    def test_shift_type_classification_fix(self):
+        """Test the specific shift type classification fix for SCHADS Award compliance"""
+        print(f"\n🎯 TESTING SHIFT TYPE CLASSIFICATION FIX")
+        print("=" * 60)
+        print("🎯 CRITICAL: Testing 15:30-23:30 shift classification as EVENING (not DAY)")
+        print("📋 SCHADS Award Rule: Any shift extending past 20:00 should be EVENING for entire duration")
+        
+        # Test cases specifically for the shift type classification fix
+        test_cases = [
+            {
+                "name": "09:00-17:00 (should be DAY - ends before 20:00)",
+                "date": "2025-01-06",  # Monday
+                "start_time": "09:00",
+                "end_time": "17:00",
+                "expected_hours": 8.0,
+                "expected_rate": 42.00,  # Day rate
+                "expected_pay": 336.00,  # 8 * 42.00
+                "expected_shift_type": "DAY"
+            },
+            {
+                "name": "15:00-20:00 (should be DAY - ends exactly at 20:00)",
+                "date": "2025-01-06",  # Monday
+                "start_time": "15:00",
+                "end_time": "20:00",
+                "expected_hours": 5.0,
+                "expected_rate": 42.00,  # Day rate (ends exactly at 20:00)
+                "expected_pay": 210.00,  # 5 * 42.00
+                "expected_shift_type": "DAY"
+            },
+            {
+                "name": "15:00-20:01 (should be EVENING - extends past 20:00)",
+                "date": "2025-01-06",  # Monday
+                "start_time": "15:00",
+                "end_time": "20:01",
+                "expected_hours": 5.02,  # 5 hours 1 minute
+                "expected_rate": 44.50,  # Evening rate
+                "expected_pay": 223.39,  # 5.02 * 44.50 (approximately)
+                "expected_shift_type": "EVENING"
+            },
+            {
+                "name": "15:30-23:30 (should be EVENING - extends past 20:00) - CRITICAL TEST",
+                "date": "2025-01-06",  # Monday
+                "start_time": "15:30",
+                "end_time": "23:30",
+                "expected_hours": 8.0,
+                "expected_rate": 44.50,  # Evening rate
+                "expected_pay": 356.00,  # 8 * 44.50
+                "expected_shift_type": "EVENING"
+            },
+            {
+                "name": "20:00-06:00 (should be EVENING or NIGHT - starts at 20:00)",
+                "date": "2025-01-06",  # Monday
+                "start_time": "20:00",
+                "end_time": "06:00",
+                "expected_hours": 10.0,
+                "expected_rate": 44.50,  # Evening rate (starts at 20:00)
+                "expected_pay": 445.00,  # 10 * 44.50
+                "expected_shift_type": "EVENING"
+            }
+        ]
+        
+        classification_tests_passed = 0
+        critical_test_passed = False
+        
+        for i, test_case in enumerate(test_cases):
+            is_critical = "CRITICAL TEST" in test_case["name"]
+            print(f"\n   {'🎯 CRITICAL: ' if is_critical else ''}Testing: {test_case['name']}")
+            
+            # Create roster entry
+            roster_entry = {
+                "id": "",  # Will be auto-generated
+                "date": test_case["date"],
+                "shift_template_id": "test-classification-template",
+                "start_time": test_case["start_time"],
+                "end_time": test_case["end_time"],
+                "is_sleepover": False,
+                "is_public_holiday": False,
+                "staff_id": None,
+                "staff_name": "Test Staff",
+                "hours_worked": 0.0,
+                "base_pay": 0.0,
+                "sleepover_allowance": 0.0,
+                "total_pay": 0.0
+            }
+            
+            success, response = self.run_test(
+                f"Create {test_case['name']}",
+                "POST",
+                "api/roster",
+                200,
+                data=roster_entry
+            )
+            
+            if success:
+                hours_worked = response.get('hours_worked', 0)
+                total_pay = response.get('total_pay', 0)
+                base_pay = response.get('base_pay', 0)
+                
+                # Calculate expected hourly rate from actual pay
+                actual_hourly_rate = base_pay / hours_worked if hours_worked > 0 else 0
+                
+                print(f"      Time: {test_case['start_time']} - {test_case['end_time']}")
+                print(f"      Hours worked: {hours_worked:.2f} (expected: {test_case['expected_hours']:.2f})")
+                print(f"      Actual hourly rate: ${actual_hourly_rate:.2f}")
+                print(f"      Expected hourly rate: ${test_case['expected_rate']:.2f}")
+                print(f"      Total pay: ${total_pay:.2f} (expected: ${test_case['expected_pay']:.2f})")
+                
+                # Determine actual shift type based on hourly rate
+                if abs(actual_hourly_rate - 42.00) < 0.01:
+                    actual_shift_type = "DAY"
+                elif abs(actual_hourly_rate - 44.50) < 0.01:
+                    actual_shift_type = "EVENING"
+                elif abs(actual_hourly_rate - 48.50) < 0.01:
+                    actual_shift_type = "NIGHT"
+                else:
+                    actual_shift_type = "UNKNOWN"
+                
+                print(f"      Actual shift type: {actual_shift_type}")
+                print(f"      Expected shift type: {test_case['expected_shift_type']}")
+                
+                # Check if classification is correct
+                hours_correct = abs(hours_worked - test_case['expected_hours']) < 0.1
+                rate_correct = abs(actual_hourly_rate - test_case['expected_rate']) < 0.01
+                shift_type_correct = actual_shift_type == test_case['expected_shift_type']
+                
+                if hours_correct and rate_correct and shift_type_correct:
+                    print(f"      ✅ Shift type classification CORRECT")
+                    classification_tests_passed += 1
+                    if is_critical:
+                        critical_test_passed = True
+                else:
+                    print(f"      ❌ Shift type classification INCORRECT")
+                    if not hours_correct:
+                        print(f"         Hours mismatch: got {hours_worked:.2f}, expected {test_case['expected_hours']:.2f}")
+                    if not rate_correct:
+                        print(f"         Rate mismatch: got ${actual_hourly_rate:.2f}, expected ${test_case['expected_rate']:.2f}")
+                    if not shift_type_correct:
+                        print(f"         Shift type mismatch: got {actual_shift_type}, expected {test_case['expected_shift_type']}")
+                    
+                    if is_critical:
+                        print(f"      🚨 CRITICAL TEST FAILED!")
+                        print(f"         The 15:30-23:30 shift is NOT being classified as EVENING!")
+                        print(f"         This violates SCHADS Award requirements!")
+            else:
+                print(f"      ❌ Failed to create roster entry for testing")
+                if is_critical:
+                    print(f"      🚨 CRITICAL TEST COULD NOT BE EXECUTED!")
+        
+        print(f"\n" + "=" * 60)
+        print(f"📊 SHIFT TYPE CLASSIFICATION RESULTS: {classification_tests_passed}/{len(test_cases)} tests passed")
+        
+        if critical_test_passed:
+            print(f"✅ CRITICAL TEST PASSED: 15:30-23:30 shift correctly classified as EVENING")
+        else:
+            print(f"❌ CRITICAL TEST FAILED: 15:30-23:30 shift NOT correctly classified as EVENING")
+        
+        if classification_tests_passed == len(test_cases):
+            print(f"🎉 ALL SHIFT TYPE CLASSIFICATION TESTS PASSED!")
+            print(f"   - Shifts ending at or before 20:00 are DAY shifts")
+            print(f"   - Shifts extending past 20:00 are EVENING shifts")
+            print(f"   - SCHADS Award compliance verified")
+        else:
+            print(f"⚠️  SHIFT TYPE CLASSIFICATION ISSUES DETECTED!")
+            print(f"   - Check SCHADS Award compliance logic")
+            print(f"   - Verify 20:00 cutoff time implementation")
+        
+        return classification_tests_passed == len(test_cases)
+
     def test_pay_calculations(self):
         """Test pay calculation accuracy - FOCUS ON SCHADS EVENING SHIFT RULES"""
         print(f"\n💰 Testing SCHADS Award Pay Calculations...")
