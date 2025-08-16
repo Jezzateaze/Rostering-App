@@ -716,10 +716,11 @@ class ShiftRosterAPITester:
             "Export Shift Roster CSV (No Filters)",
             "GET",
             "api/export/shift-roster/csv",
-            200
+            200,
+            expect_json=False
         )
         
-        if success:
+        if success and len(response) > 0:
             print(f"   ✅ CSV export successful without filters")
         
         # Test with date filters
@@ -731,10 +732,11 @@ class ShiftRosterAPITester:
             "GET",
             "api/export/shift-roster/csv",
             200,
-            params={"start_date": start_date, "end_date": end_date}
+            params={"start_date": start_date, "end_date": end_date},
+            expect_json=False
         )
         
-        if success_filtered:
+        if success_filtered and len(response_filtered) > 0:
             print(f"   ✅ CSV export successful with date filters")
         
         return success and success_filtered
@@ -748,10 +750,11 @@ class ShiftRosterAPITester:
             "Export Pay Summary CSV (No Filters)",
             "GET",
             "api/export/pay-summary/csv",
-            200
+            200,
+            expect_json=False
         )
         
-        if success:
+        if success and len(response) > 0:
             print(f"   ✅ Pay summary CSV export successful without filters")
         
         # Test with pay period filters
@@ -763,10 +766,11 @@ class ShiftRosterAPITester:
             "GET",
             "api/export/pay-summary/csv",
             200,
-            params={"pay_period_start": pay_start, "pay_period_end": pay_end}
+            params={"pay_period_start": pay_start, "pay_period_end": pay_end},
+            expect_json=False
         )
         
-        if success_filtered:
+        if success_filtered and len(response_filtered) > 0:
             print(f"   ✅ Pay summary CSV export successful with pay period filters")
         
         return success and success_filtered
@@ -779,10 +783,11 @@ class ShiftRosterAPITester:
             "Export Workforce Data Excel (Multi-sheet)",
             "GET",
             "api/export/workforce-data/excel",
-            200
+            200,
+            expect_json=False
         )
         
-        if success:
+        if success and len(response) > 0:
             print(f"   ✅ Excel export successful - comprehensive multi-sheet export")
         
         return success
@@ -796,10 +801,11 @@ class ShiftRosterAPITester:
             "Export Pay Summary PDF (No Filters)",
             "GET",
             "api/export/pay-summary/pdf",
-            200
+            200,
+            expect_json=False
         )
         
-        if success:
+        if success and len(response) > 0:
             print(f"   ✅ PDF export successful without filters")
         
         # Test with period filters
@@ -811,10 +817,11 @@ class ShiftRosterAPITester:
             "GET",
             "api/export/pay-summary/pdf",
             200,
-            params={"pay_period_start": pay_start, "pay_period_end": pay_end}
+            params={"pay_period_start": pay_start, "pay_period_end": pay_end},
+            expect_json=False
         )
         
-        if success_filtered:
+        if success_filtered and len(response_filtered) > 0:
             print(f"   ✅ PDF export successful with period filters")
         
         return success and success_filtered
