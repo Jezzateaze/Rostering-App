@@ -292,18 +292,24 @@ function App() {
       return <Badge variant="secondary" className="bg-indigo-100 text-indigo-800">Sleepover</Badge>;
     }
     
-    // Parse date to check day of week
-    const entryDate = new Date(entry.date);
+    // Parse date to check day of week - match backend Python weekday() logic
+    const entryDate = new Date(entry.date + 'T00:00:00'); // Ensure consistent parsing
     const dayOfWeek = entryDate.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
     
-    // Check for weekend days
-    if (dayOfWeek === 0) { // Sunday
+    // Convert JavaScript day (0=Sunday) to Python weekday equivalent for consistent logic
+    // Python: 0=Monday, 1=Tuesday, ..., 5=Saturday, 6=Sunday
+    let pythonWeekday;
+    if (dayOfWeek === 0) pythonWeekday = 6; // Sunday
+    else pythonWeekday = dayOfWeek - 1; // Monday=0, Tuesday=1, ..., Saturday=5
+    
+    // Check for weekend days using Python weekday logic
+    if (pythonWeekday === 6) { // Sunday (Python weekday 6)
       return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Sunday</Badge>;
-    } else if (dayOfWeek === 6) { // Saturday
+    } else if (pythonWeekday === 5) { // Saturday (Python weekday 5)
       return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Saturday</Badge>;
     }
     
-    // For weekdays (Monday=1 to Friday=5), determine shift type
+    // For weekdays (Monday=0 to Friday=4), determine shift type
     const startHour = parseInt(entry.start_time.split(':')[0]);
     const startMin = parseInt(entry.start_time.split(':')[1]);
     const endHour = parseInt(entry.end_time.split(':')[0]);
