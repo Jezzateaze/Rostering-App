@@ -390,6 +390,60 @@ function App() {
             {renderMonthlyCalendar()}
           </TabsContent>
 
+          <TabsContent value="shifts" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Clock className="w-5 h-5" />
+                  <span>Default Shift Times</span>
+                </CardTitle>
+                <p className="text-slate-600">
+                  Adjust the default start and end times for each shift. These times will be used when generating new rosters.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day, dayIndex) => {
+                    const dayTemplates = shiftTemplates.filter(t => t.day_of_week === dayIndex);
+                    return (
+                      <div key={day} className="border rounded-lg p-4">
+                        <h3 className="font-semibold text-lg mb-4">{day}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          {dayTemplates.map((template, shiftIndex) => (
+                            <Card key={template.id} className="p-4">
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-medium">
+                                    Shift {shiftIndex + 1}
+                                    {template.is_sleepover && <Badge variant="secondary" className="ml-2">Sleepover</Badge>}
+                                  </h4>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedTemplate(template);
+                                      setShowTemplateDialog(true);
+                                    }}
+                                  >
+                                    <Edit className="w-3 h-3 mr-1" />
+                                    Edit
+                                  </Button>
+                                </div>
+                                <div className="text-sm text-slate-600">
+                                  {template.start_time} - {template.end_time}
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="staff" className="space-y-6">
             <Card>
               <CardHeader>
