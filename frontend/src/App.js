@@ -939,14 +939,64 @@ function App() {
                 <Separator />
 
                 <div className="space-y-3">
-                  <h4 className="font-medium text-slate-700">Pay Calculation</h4>
+                  <h4 className="font-medium text-slate-700">Pay Calculation & Overrides</h4>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Shift Type Override</Label>
+                      <Select
+                        value={selectedShift.manual_shift_type || "auto"}
+                        onValueChange={(value) => {
+                          const manualType = value === "auto" ? null : value;
+                          setSelectedShift({
+                            ...selectedShift,
+                            manual_shift_type: manualType
+                          });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Auto-detect" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="auto">Auto-detect</SelectItem>
+                          <SelectItem value="weekday_day">Weekday Day ($42.00/hr)</SelectItem>
+                          <SelectItem value="weekday_evening">Weekday Evening ($44.50/hr)</SelectItem>
+                          <SelectItem value="weekday_night">Weekday Night ($48.50/hr)</SelectItem>
+                          <SelectItem value="saturday">Saturday ($57.50/hr)</SelectItem>
+                          <SelectItem value="sunday">Sunday ($74.00/hr)</SelectItem>
+                          <SelectItem value="public_holiday">Public Holiday ($88.50/hr)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Custom Hourly Rate</Label>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm">$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="Auto-calculated"
+                          value={selectedShift.manual_hourly_rate || ''}
+                          onChange={(e) => {
+                            const manualRate = parseFloat(e.target.value) || null;
+                            setSelectedShift({
+                              ...selectedShift,
+                              manual_hourly_rate: manualRate
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Hours Worked</Label>
                       <div className="text-lg font-medium">{selectedShift.hours_worked.toFixed(1)}</div>
                     </div>
                     <div>
-                      <Label>Shift Type</Label>
+                      <Label>Current Shift Type</Label>
                       {getShiftTypeBadge(selectedShift)}
                     </div>
                   </div>
