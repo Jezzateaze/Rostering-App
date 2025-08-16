@@ -1036,22 +1036,19 @@ function App() {
                     Cancel
                   </Button>
                   <Button onClick={() => {
-                    // Include manual overrides in the update
+                    // Simple direct update without break check for now
                     const updates = {
                       staff_id: selectedShift.staff_id,
                       staff_name: selectedShift.staff_name,
                       start_time: selectedShift.start_time,
                       end_time: selectedShift.end_time,
-                      manual_shift_type: selectedShift.manual_shift_type,
-                      manual_hourly_rate: selectedShift.manual_hourly_rate
+                      manual_shift_type: selectedShift.manual_shift_type || null,
+                      manual_hourly_rate: selectedShift.manual_hourly_rate || null
                     };
                     
-                    // Use break check function for staff assignment and time updates
-                    handleStaffAssignmentWithBreakCheck(
-                      selectedShift.staff_id,
-                      selectedShift.staff_name,
-                      { ...selectedShift, ...updates }
-                    );
+                    console.log('Saving shift with updates:', updates);
+                    updateRosterEntry(selectedShift.id, updates);
+                    setShowShiftDialog(false);
                   }}>
                     Save Changes
                   </Button>
