@@ -1086,14 +1086,16 @@ function App() {
                     Cancel
                   </Button>
                   <Button onClick={() => {
-                    // Simple direct update without break check for now
+                    // Include all manual overrides in the update
                     const updates = {
                       staff_id: selectedShift.staff_id,
                       staff_name: selectedShift.staff_name,
                       start_time: selectedShift.start_time,
                       end_time: selectedShift.end_time,
                       manual_shift_type: selectedShift.manual_shift_type || null,
-                      manual_hourly_rate: selectedShift.manual_hourly_rate || null
+                      manual_hourly_rate: selectedShift.manual_hourly_rate || null,
+                      manual_sleepover: selectedShift.manual_sleepover,
+                      wake_hours: selectedShift.wake_hours || null
                     };
                     
                     console.log('Saving shift with updates:', updates);
